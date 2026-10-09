@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Card from './Card';
 import Hand from './Hand';
 import { ColorPicker, EndScreen } from './Overlays';
-import { COLOR_NAME, SYMBOL, playableIndexes, type Color, type PlayerView } from '@/lib/uno';
+import { COLOR_NAME, SYMBOL, playableIndexes, type Card as CardT, type Color, type PlayerView } from '@/lib/uno';
 import s from './Table.module.css';
 
 type Props = {
@@ -19,7 +19,7 @@ type Props = {
 function OpponentChip({ name, count, active }: { name: string; count: number; active: boolean }) {
   const initials = name.split(' ').map((w) => w[0]).join('');
   return (
-    <div className={s.chip} data-active={active} aria-label={`${name}, ${count} kartu${active ? ', sedang giliran' : ''}`}>
+    <div className={s.chip} data-active={active} role="img" aria-label={`${name}, ${count} kartu${active ? ', sedang giliran' : ''}`}>
       <span className={s.avatar} aria-hidden>{initials}</span>
       <span className={s.chipName} aria-hidden>{name}</span>
       <span className={s.count} aria-hidden>{count}</span>
@@ -28,10 +28,12 @@ function OpponentChip({ name, count, active }: { name: string; count: number; ac
 }
 
 export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onRestart }: Props) {
-  const [wildIndex, setWildIndex] = useState<number | null>(null);
+  // pilihan Wild terikat ke tangan saat itu: kalau tangan berubah (mis. kartu lain dimainkan lewat keyboard), pemilih warna tertutup
+  const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
+  const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
   const myTurn = view.turn === view.seat && view.winner === null;
   const playable = playableIndexes(view);
-  const play = (i: number) => (view.hand[i].c === 'wild' ? setWildIndex(i) : onPlay(i));
+  const play = (i: number) => (view.hand[i].c === 'wild' ? setWildPick({ hand: view.hand, index: i }) : onPlay(i));
   const opponents = view.names.map((name, seat) => ({ name, seat })).filter((o) => o.seat !== view.seat);
 
   return (
@@ -66,10 +68,10 @@ export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onResta
       {wildIndex !== null && (
         <ColorPicker
           onPick={(c) => {
-            setWildIndex(null);
+            setWildPick(null);
             onPlay(wildIndex, c);
           }}
-          onCancel={() => setWildIndex(null)}
+          onCancel={() => setWildPick(null)}
         />
       )}
       {view.winner !== null && (
