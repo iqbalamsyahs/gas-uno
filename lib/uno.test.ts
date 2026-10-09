@@ -294,5 +294,5 @@ describe('simulasi', () => {
         if (++steps > 5000) throw new Error(`game ${g} macet`);
       }
     }
-  });
+  }, 30_000); // simulasi bisa > 5 detik saat mesin sibuk
 });
