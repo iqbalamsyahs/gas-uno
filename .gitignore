@@ -43,3 +43,5 @@ next-env.d.ts
 
 # cache hook impeccable
 .impeccable/hook.cache.json
+
+.vercel
