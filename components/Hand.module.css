@@ -1,0 +1,8 @@
+.hand {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding-top: 16px; /* ruang untuk kartu yang terangkat */
+}
+
+.row { display: flex; justify-content: center; }

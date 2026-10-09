@@ -1,0 +1,73 @@
+.card {
+  --c: var(--wild);
+  position: relative;
+  flex: none;
+  width: var(--card-w);
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border: 4px solid var(--card-border);
+  border-radius: calc(var(--card-w) * 0.13);
+  background: var(--c);
+  color: #fff;
+  font: 800 calc(var(--card-w) * 0.2) / 1 system-ui, sans-serif;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.45);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.card[data-color='red'] { --c: var(--red); }
+.card[data-color='yellow'] { --c: var(--yellow); color: var(--ink-dark); }
+.card[data-color='green'] { --c: var(--green); }
+.card[data-color='blue'] { --c: var(--blue); }
+
+button.card { cursor: pointer; }
+button.card[data-playable='false'] { cursor: not-allowed; }
+.card[data-dim='true'] { filter: brightness(0.45) saturate(0.6); }
+.card[data-selected='true'] { transform: translateY(-14px); outline: 2px solid var(--accent); outline-offset: 1px; }
+.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@media (hover: hover) {
+  button.card[data-playable='true']:hover { transform: translateY(-14px); }
+}
+
+.corner {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: max(11px, calc(var(--card-w) * 0.2));
+  line-height: 1;
+}
+
+.corner small { font-size: 11px; }
+
+.flip { top: auto; left: auto; bottom: 3px; right: 4px; transform: rotate(180deg); }
+
+.oval {
+  position: absolute;
+  inset: 22% 8%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  transform: rotate(-25deg);
+}
+
+.oval b { transform: rotate(25deg); color: var(--c); font-size: calc(var(--card-w) * 0.4); }
+
+/* kuning di atas putih terlalu pucat: pakai tinta gelap */
+.card[data-color='yellow'] .oval b { color: var(--ink-dark); }
+
+.card[data-color='wild'] .oval {
+  background: conic-gradient(var(--red) 0 25%, var(--yellow) 0 50%, var(--green) 0 75%, var(--blue) 0);
+}
+
+.card[data-color='wild'] .oval b { color: #fff; text-shadow: 0 1px 2px #000; }
+
+.back .oval { background: var(--red); }
+.back .oval b { color: var(--yellow); font-size: max(11px, calc(var(--card-w) * 0.22)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}
