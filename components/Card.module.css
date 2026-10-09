@@ -34,12 +34,13 @@ button.card[data-playable='false'] { cursor: not-allowed; }
   top: 3px;
   left: 4px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
+  gap: 1px;
   font-size: max(11px, calc(var(--card-w) * 0.2));
   line-height: 1;
 }
 
+/* simbol di samping angka, bukan di bawahnya, supaya pojok tidak menabrak oval */
 .corner small { font-size: 11px; }
 
 .flip { top: auto; left: auto; bottom: 3px; right: 4px; transform: rotate(180deg); }
