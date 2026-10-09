@@ -1,0 +1,86 @@
+.table {
+  min-height: 100dvh;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template: 'opps' auto 'center' 1fr 'mine' auto / 1fr;
+  gap: 12px;
+  padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+}
+
+.opps { grid-area: opps; display: flex; justify-content: space-between; gap: 8px; }
+
+.chip {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: var(--chip);
+  font-size: 12px;
+}
+
+.chip[data-active='true'] { outline: 2px solid var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+
+@keyframes pulse { 50% { outline-offset: 3px; } }
+
+.avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #6d4c41;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chipName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.count { padding: 0 6px; border-radius: 6px; background: #fff; color: var(--felt); font-weight: 800; }
+
+.center { grid-area: center; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; }
+
+.piles { display: flex; align-items: center; gap: 16px; }
+
+.deck { padding: 0; border: 0; border-radius: 10px; background: none; cursor: pointer; }
+.deck:disabled { cursor: default; }
+.deck:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.played { animation: land 0.25s ease-out; }
+
+@keyframes land { from { transform: translateY(-40px) scale(1.08); opacity: 0.5; } }
+
+.color { margin: 0; padding: 3px 12px; border-radius: 999px; background: var(--chip); font-weight: 700; }
+
+.log { margin: 0; min-height: 1.4em; }
+
+.pass {
+  padding: 8px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink-dark);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pass:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.mine { grid-area: mine; display: grid; justify-items: center; gap: 4px; }
+
+.yourTurn { margin: 0; font-size: 12px; font-weight: 700; color: var(--accent); }
+
+@media (min-width: 720px) {
+  .table { grid-template: '. top .' auto 'left center right' 1fr 'mine mine mine' auto / 1fr 2fr 1fr; }
+  .opps { display: contents; }
+  .opps > :nth-child(1) { grid-area: left; align-self: center; justify-self: start; }
+  .opps > :nth-child(2) { grid-area: top; justify-self: center; }
+  .opps > :nth-child(3) { grid-area: right; align-self: center; justify-self: end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip[data-active='true'], .played { animation: none; }
+}

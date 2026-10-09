@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import type { DiscordSDK } from '@discord/embedded-app-sdk';
 import { MOCK_USER, type User } from '@/lib/discord-user';
+import Card from './Card';
+import Game from './Game';
 import s from './DiscordGate.module.css';
 
 type Status = { kind: 'loading' } | { kind: 'ready'; user: User } | { kind: 'error' };
@@ -47,7 +49,7 @@ export default function DiscordGate() {
     };
   }, [attempt]);
 
-  if (status.kind === 'ready') return <p className={s.screen}>Halo, {status.user.name}</p>;
+  if (status.kind === 'ready') return <Game user={status.user} />;
 
   if (status.kind === 'error') {
     return (
@@ -69,6 +71,7 @@ export default function DiscordGate() {
 
   return (
     <div className={s.screen} role="status">
+      <Card className={s.spin} />
       <p>Menyambung ke Discord…</p>
     </div>
   );
