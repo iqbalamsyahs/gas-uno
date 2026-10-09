@@ -174,7 +174,7 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 
 - [x] Server realtime: Cloudflare Durable Objects (keputusan spike M3).
 - [ ] Apakah Activity juga perlu bisa dimainkan di DM dan text channel, atau cukup di voice channel?
-- [ ] Maksimal 4 pemain, atau sampai 6–10 seperti UNO aslinya?
+- [x] Maksimal pemain: sampai 10 (diputuskan Oct 9, 2026). Dampak yang harus ditangani di M4: tata letak lawan di HP untuk 9 lawan, aturan kursi bot (sekarang "maksimal 4 kursi"), dan target durasi < 10 menit untuk meja penuh.
 - [ ] Aturan rumah mana yang paling diinginkan untuk Fase 3?
 
 **Milestone (berurutan; tanggal menyusul)**
