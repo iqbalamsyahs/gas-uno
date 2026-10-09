@@ -63,7 +63,7 @@ Pekerjaan dibagi tiga fase. Setiap fase bisa dirilis dan dipakai sendiri, tanpa 
 
 - Server realtime yang menyimpan kondisi game dan memutuskan sah tidaknya setiap langkah.
 - Satu meja untuk setiap `instanceId` Activity.
-- Lobby: daftar pemain, host menekan Mulai, kursi kosong diisi bot (maksimal 4 kursi).
+- Lobby sebagai layar pertama: daftar pemain, host menambah/mengurangi bot sendiri (lobby dimulai tanpa bot), host menekan Mulai kalau total pemain 2–10.
 - Bisa tersambung lagi tanpa kehilangan kartu kalau koneksi putus; kalau tidak kembali dalam 60 detik, bot mengambil alih.
 - Penonton bisa melihat game yang sedang berjalan.
 
@@ -182,5 +182,8 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 1. **M1 — Game di web:** proyek Next.js, logika game, dan UI meja dikembangkan di browser dengan mock user, lalu bisa dimainkan lewat URL Vercel. Belum menyentuh Discord. — selesai: https://uno-olive-five.vercel.app
 2. **M2 — Fase 1 selesai:** app didaftarkan di Discord, `ready()` dan login (nama dan avatar) berjalan, game lawan bot bisa dimainkan di Discord, plus test simulasi lulus. Desain: [spec Fase 1](docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md). — selesai: diuji di Discord web dan HP.
 3. **M3 — Spike realtime:** dua pemain di satu Activity melihat kondisi yang sama lewat WebSocket. — selesai Oct 9, 2026: dua akun di satu voice channel, penghitung sinkron, ping 27–30 ms dan 44–81 ms (perkiraan jeda antar pemain 40–60 ms).
-4. **M4 — Fase 2 selesai:** lobby, game multiplayer, reconnect, dan bot pengganti.
+4. **M4 — Fase 2 selesai**, dikerjakan dalam tiga bagian:
+   - **Bagian 1, multiplayer dasar:** server Durable Object, lobby, kursi bot, meja sampai 10 pemain, tersambung ulang, bot pengganti setelah 60 detik. Desain: [spec M4 bagian 1](docs/superpowers/specs/2026-10-09-uno-m4-multiplayer-design.md).
+   - **Bagian 2, ketahanan:** meja dihapus 10 menit setelah kosong.
+   - **Bagian 3, penonton.**
 5. **M5 — Fase 3:** tombol UNO, aturan rumah, animasi.
