@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNO</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #1b5e20; color: #fff; text-align: center; }
+  h1 { margin: 10px 0 0; }
+  .row { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 10px; }
+  .bot { padding: 6px 12px; border-radius: 8px; background: #0003; }
+  .bot.turn, #you.turn { outline: 3px solid gold; }
+  .card { width: 56px; height: 84px; border-radius: 8px; border: 3px solid #fff; display: flex;
+          align-items: center; justify-content: center; font-size: 22px; font-weight: bold;
+          box-shadow: 0 2px 4px #0006; user-select: none; }
+  .red { background: #d32f2f; } .yellow { background: #fbc02d; color: #000; }
+  .green { background: #388e3c; } .blue { background: #1976d2; }
+  .wild { background: conic-gradient(#d32f2f 0 25%, #fbc02d 0 50%, #388e3c 0 75%, #1976d2 0); }
+  .back { background: #222; cursor: pointer; }
+  #hand .card { cursor: pointer; opacity: .5; }
+  #hand .card.ok { opacity: 1; transform: translateY(-6px); }
+  #color { width: 24px; height: 24px; border-radius: 50%; display: inline-block; vertical-align: middle; border: 2px solid #fff; }
+  button { font-size: 16px; padding: 8px 14px; border-radius: 8px; border: 0; cursor: pointer; }
+  #picker button { width: 56px; height: 40px; }
+  #msg { min-height: 1.4em; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<h1>UNO</h1>
+<div class="row" id="bots"></div>
+<div class="row" style="align-items:center">
+  <div class="card back" id="deck" title="Ambil kartu">UNO</div>
+  <div id="top"></div>
+  <span>Warna: <span id="color"></span></span>
+</div>
+<p id="msg"></p>
+<div class="row" id="picker" hidden>
+  <button class="red" data-c="red"></button><button class="yellow" data-c="yellow"></button>
+  <button class="green" data-c="green"></button><button class="blue" data-c="blue"></button>
+</div>
+<div class="row"><button id="pass" hidden>Lewati</button><button id="again" hidden>Main lagi</button></div>
+<div id="you"><b>Kartu kamu</b><div class="row" id="hand"></div></div>
+
+<script>
+const COLORS = ['red', 'yellow', 'green', 'blue'];
+const NAMES = ['Kamu', 'Bot 1', 'Bot 2', 'Bot 3'];
+const LABEL = { skip: '⊘', rev: '⇄', wild: 'W' };
+let deck, discard, hands, cur, dir, color, drawn, pending, over;
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const top = () => discard[discard.length - 1];
+const next = (k = 1) => ((cur + dir * k) % 4 + 4) % 4;
+const canPlay = c => c.c === 'wild' || c.c === color || c.v === top().v;
+
+function newGame() {
+  deck = [];
+  for (const c of COLORS) {
+    deck.push({ c, v: '0' });
+    for (const v of ['1','2','3','4','5','6','7','8','9','skip','rev','+2']) deck.push({ c, v }, { c, v });
+  }
+  for (let i = 0; i < 4; i++) deck.push({ c: 'wild', v: 'wild' }, { c: 'wild', v: '+4' });
+  shuffle(deck);
+  hands = [[], [], [], []];
+  for (let p = 0; p < 4; p++) draw(p, 7);
+  // kartu pertama harus angka
+  let i = deck.findIndex(c => /^\d$/.test(c.v));
+  discard = deck.splice(i, 1);
+  color = top().c;
+  cur = 0; dir = 1; drawn = false; pending = null; over = false;
+  $('again').hidden = true;
+  say('Giliran kamu!');
+  turn();
+}
+
+function draw(p, n) {
+  for (let i = 0; i < n; i++) {
+    if (!deck.length) deck = shuffle(discard.splice(0, discard.length - 1));
+    if (deck.length) hands[p].push(deck.pop());
+  }
+}
+
+function say(t) { $('msg').textContent = t; }
+
+function play(p, i, chosen) {
+  const card = hands[p].splice(i, 1)[0];
+  discard.push(card);
+  color = card.c === 'wild' ? chosen : card.c;
+  say(`${NAMES[p]} main ${card.c === 'wild' ? '' : card.c + ' '}${LABEL[card.v] || card.v}${card.c === 'wild' ? ' → ' + chosen : ''}`);
+  if (!hands[p].length) {
+    over = true; render();
+    say(p === 0 ? '🎉 Kamu menang!' : `${NAMES[p]} menang!`);
+    $('again').hidden = false;
+    return;
+  }
+  if (hands[p].length === 1) say($('msg').textContent + ' — UNO!');
+  let step = 1;
+  if (card.v === 'skip') step = 2;
+  if (card.v === 'rev') dir = -dir;
+  if (card.v === '+2' || card.v === '+4') { draw(next(), card.v === '+2' ? 2 : 4); step = 2; }
+  endTurn(step);
+}
+
+function endTurn(step = 1) {
+  cur = next(step); drawn = false;
+  turn();
+}
+
+function turn() {
+  render();
+  if (cur !== 0) setTimeout(botTurn, 900);
+}
+
+function botTurn() {
+  const h = hands[cur];
+  const counts = {};
+  h.forEach(c => c.c !== 'wild' && (counts[c.c] = (counts[c.c] || 0) + 1));
+  const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || COLORS[Math.random() * 4 | 0];
+  // utamakan kartu berwarna, simpan wild untuk terakhir
+  let i = h.findIndex(c => c.c !== 'wild' && canPlay(c));
+  if (i < 0) i = h.findIndex(canPlay);
+  if (i >= 0) return play(cur, i, best);
+  draw(cur, 1);
+  if (canPlay(h[h.length - 1])) return play(cur, h.length - 1, best);
+  say(`${NAMES[cur]} ambil kartu & lewat`);
+  endTurn();
+}
+
+function clickCard(i) {
+  if (over || cur !== 0 || pending !== null) return;
+  const h = hands[0];
+  if (drawn && i !== h.length - 1) return; // setelah ambil, hanya kartu yang baru diambil
+  if (!canPlay(h[i])) return;
+  if (h[i].c === 'wild') { pending = i; $('picker').hidden = false; say('Pilih warna'); return; }
+  play(0, i);
+}
+
+$('picker').onclick = e => {
+  const c = e.target.dataset.c;
+  if (!c) return;
+  $('picker').hidden = true;
+  const i = pending; pending = null;
+  play(0, i, c);
+};
+
+$('deck').onclick = () => {
+  if (over || cur !== 0 || drawn || pending !== null) return;
+  draw(0, 1); drawn = true;
+  if (canPlay(hands[0][hands[0].length - 1])) { say('Mainkan kartu itu atau lewati'); render(); }
+  else { say('Tidak bisa main, lewat'); endTurn(); }
+};
+$('pass').onclick = () => endTurn();
+$('again').onclick = newGame;
+
+function cardEl(c) {
+  const d = document.createElement('div');
+  d.className = 'card ' + c.c;
+  d.textContent = LABEL[c.v] || c.v;
+  return d;
+}
+
+function render() {
+  $('bots').innerHTML = '';
+  for (let p = 1; p < 4; p++) {
+    const b = document.createElement('div');
+    b.className = 'bot' + (cur === p && !over ? ' turn' : '');
+    b.textContent = `${NAMES[p]}: ${hands[p].length} kartu`;
+    $('bots').append(b);
+  }
+  $('top').replaceChildren(cardEl(top()));
+  $('color').className = color;
+  $('you').className = cur === 0 && !over ? 'turn' : '';
+  $('pass').hidden = !(drawn && cur === 0 && !over);
+  $('hand').replaceChildren(...hands[0].map((c, i) => {
+    const d = cardEl(c);
+    if (cur === 0 && !over && canPlay(c) && (!drawn || i === hands[0].length - 1)) d.classList.add('ok');
+    d.onclick = () => clickCard(i);
+    return d;
+  }));
+}
+
+newGame();
+</script>
+</body>
+</html>
