@@ -149,3 +149,56 @@ export function apply(state: GameState, a: Action): GameState {
   endTurn(s, step);
   return s;
 }
+
+export function botAction(s: GameState): Action {
+  const seat = s.turn;
+  const hand = s.hands[seat];
+  if (s.drawn) return { type: 'play', seat, index: hand.length - 1, color: bestColor(hand) };
+  // dahulukan kartu berwarna, simpan Wild untuk belakangan
+  let index = hand.findIndex((k) => k.c !== 'wild' && canPlay(s, k));
+  if (index < 0) index = hand.findIndex((k) => canPlay(s, k));
+  return index >= 0 ? { type: 'play', seat, index, color: bestColor(hand) } : { type: 'draw', seat };
+}
+
+function bestColor(hand: Card[]): Color {
+  const count = (c: Color) => hand.filter((k) => k.c === c).length;
+  return COLORS.reduce((best, c) => (count(c) > count(best) ? c : best));
+}
+
+export type PlayerView = {
+  seat: number;
+  names: string[];
+  hand: Card[];
+  counts: number[];
+  top: Card;
+  discardCount: number;
+  color: Color;
+  turn: number;
+  drawn: boolean;
+  winner: number | null;
+  log: string;
+};
+
+// Bentuk data yang sama akan dikirim server ke tiap pemain di Fase 2
+export function viewFor(s: GameState, seat: number): PlayerView {
+  return {
+    seat,
+    names: s.names,
+    hand: s.hands[seat],
+    counts: s.hands.map((h) => h.length),
+    top: top(s),
+    discardCount: s.discard.length,
+    color: s.color,
+    turn: s.turn,
+    drawn: s.drawn,
+    winner: s.winner,
+    log: s.log,
+  };
+}
+
+export function playableIndexes(v: PlayerView): boolean[] {
+  const myTurn = v.turn === v.seat && v.winner === null;
+  return v.hand.map(
+    (card, i) => myTurn && matches(card, v.top, v.color) && (!v.drawn || i === v.hand.length - 1),
+  );
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apply, canPlay, cardLabel, newGame, type Card, type GameState } from './uno';
+import { apply, botAction, canPlay, cardLabel, newGame, playableIndexes, viewFor, type Card, type GameState } from './uno';
 
 const NAMES = ['Kamu', 'Bot 1', 'Bot 2', 'Bot 3'];
 const c = (color: Card['c'], v: string): Card => ({ c: color, v });
@@ -221,5 +221,78 @@ describe('apply: ambil dan lewat', () => {
     });
     expect(s.hands[1]).toHaveLength(1);
     expect(s.turn).toBe(2);
+  });
+});
+
+describe('botAction', () => {
+  it('mendahulukan kartu berwarna daripada Wild', () => {
+    const s = table({ turn: 1, hands: [[], [c('wild', 'wild'), c('red', '3')], [], []] });
+    expect(botAction(s)).toMatchObject({ type: 'play', seat: 1, index: 1 });
+  });
+
+  it('memilih warna Wild yang paling banyak di tangan', () => {
+    const s = table({ turn: 1, hands: [[], [c('wild', 'wild'), c('blue', '1'), c('blue', '2'), c('green', '1')], [], []] });
+    expect(botAction(s)).toEqual({ type: 'play', seat: 1, index: 0, color: 'blue' });
+  });
+
+  it('ambil kartu kalau tidak ada yang bisa dimainkan', () => {
+    const s = table({ turn: 1, hands: [[], [c('blue', '1')], [], []] });
+    expect(botAction(s)).toEqual({ type: 'draw', seat: 1 });
+  });
+
+  it('setelah ambil kartu yang cocok, memainkan kartu itu', () => {
+    const s = apply(table({ turn: 1, hands: [[], [c('blue', '1')], [], []] }), { type: 'draw', seat: 1 });
+    expect(s.drawn).toBe(true);
+    expect(botAction(s)).toMatchObject({ type: 'play', seat: 1, index: 1 });
+  });
+});
+
+describe('viewFor', () => {
+  it('hanya berisi tangan sendiri dan jumlah kartu lawan', () => {
+    const s = newGame(NAMES, 1);
+    const v = viewFor(s, 0);
+    expect(v.hand).toEqual(s.hands[0]);
+    expect(v.counts).toEqual([7, 7, 7, 7]);
+    expect(v).not.toHaveProperty('hands');
+    expect(v).not.toHaveProperty('deck');
+    expect(v).not.toHaveProperty('seed');
+    const others = JSON.stringify([s.hands[1], s.hands[2], s.hands[3]]);
+    expect(JSON.stringify(v)).not.toContain(others);
+  });
+});
+
+describe('playableIndexes', () => {
+  it('semua false kalau bukan giliran', () => {
+    expect(playableIndexes(viewFor(table({ turn: 1 }), 0))).toEqual([false, false]);
+  });
+
+  it('menandai kartu yang cocok saat giliran', () => {
+    expect(playableIndexes(viewFor(table(), 0))).toEqual([true, false]);
+  });
+
+  it('setelah ambil, hanya kartu terakhir', () => {
+    const s = apply(table(), { type: 'draw', seat: 0 });
+    expect(playableIndexes(viewFor(s, 0))).toEqual([false, false, true]);
+  });
+
+  it('semua false setelah game selesai', () => {
+    const s = apply(table({ hands: [[c('red', '9')], [c('green', '1')], [], []] }), { type: 'play', seat: 0, index: 0 });
+    expect(playableIndexes(viewFor(s, 1))).toEqual([false]);
+  });
+});
+
+describe('simulasi', () => {
+  it('500 game bot selalu selesai dan jumlah kartu tetap 108', () => {
+    for (let g = 0; g < 500; g++) {
+      let s = newGame(NAMES, g + 1);
+      let steps = 0;
+      while (s.winner === null) {
+        const nextState = apply(s, botAction(s));
+        if (nextState === s) throw new Error(`game ${g}: bot memilih aksi tidak sah`);
+        s = nextState;
+        expect(total(s)).toBe(108);
+        if (++steps > 5000) throw new Error(`game ${g} macet`);
+      }
+    }
   });
 });
