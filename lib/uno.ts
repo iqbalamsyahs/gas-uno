@@ -78,3 +78,74 @@ export function newGame(names: string[], seed = Date.now()): GameState {
   s.log = `Giliran ${names[0]}`;
   return s;
 }
+
+export type Action =
+  | { type: 'play'; seat: number; index: number; color?: Color }
+  | { type: 'draw'; seat: number }
+  | { type: 'pass'; seat: number };
+
+const next = (s: GameState, k = 1) => {
+  const n = s.hands.length;
+  return (((s.turn + s.dir * k) % n) + n) % n;
+};
+
+function endTurn(s: GameState, step: number) {
+  s.turn = next(s, step);
+  s.drawn = false;
+}
+
+// Aksi tidak sah mengembalikan state yang sama (===). Aturan ini juga dipakai server di Fase 2.
+export function apply(state: GameState, a: Action): GameState {
+  if (state.winner !== null || a.seat !== state.turn) return state;
+  const s = structuredClone(state);
+  const hand = s.hands[a.seat];
+  const name = s.names[a.seat];
+
+  if (a.type === 'draw') {
+    if (s.drawn) return state;
+    const before = hand.length;
+    drawCards(s, a.seat, 1);
+    if (hand.length > before && canPlay(s, hand[hand.length - 1])) {
+      s.drawn = true;
+      s.log = `${name} ambil kartu`;
+      return s;
+    }
+    s.log = `${name} ambil kartu & lewat`;
+    endTurn(s, 1);
+    return s;
+  }
+
+  if (a.type === 'pass') {
+    if (!s.drawn) return state;
+    s.log = `${name} lewat`;
+    endTurn(s, 1);
+    return s;
+  }
+
+  const card = hand[a.index];
+  if (!card || !canPlay(s, card)) return state;
+  if (s.drawn && a.index !== hand.length - 1) return state; // setelah ambil, hanya kartu yang baru diambil
+  if (card.c === 'wild' && !(a.color && COLORS.includes(a.color))) return state;
+
+  hand.splice(a.index, 1);
+  s.discard.push(card);
+  s.color = card.c === 'wild' ? a.color! : card.c;
+  s.log = `${name} main ${cardLabel(card)}${card.c === 'wild' ? ` → ${COLOR_NAME[s.color]}` : ''}`;
+
+  if (!hand.length) {
+    s.winner = a.seat;
+    s.log = `${name} menang!`;
+    return s;
+  }
+  if (hand.length === 1) s.log += ' — UNO!';
+
+  let step = 1;
+  if (card.v === 'skip') step = 2;
+  if (card.v === 'rev') s.dir = s.dir === 1 ? -1 : 1;
+  if (card.v === '+2' || card.v === '+4') {
+    drawCards(s, next(s), card.v === '+2' ? 2 : 4);
+    step = 2;
+  }
+  endTurn(s, step);
+  return s;
+}
