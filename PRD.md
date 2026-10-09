@@ -107,7 +107,7 @@ Aturan mengikuti UNO standar 108 kartu. Satu-satunya pengecualian adalah aturan 
 **Login Discord**
 
 - `authorize` dengan scope `identify`, lalu `authenticate` memakai access token dari `/api/token`.
-- Nama yang ditampilkan memakai nickname di server, atau nama global kalau tidak ada.
+- Nama yang ditampilkan memakai nama global Discord, atau username kalau tidak ada. Nickname server butuh scope `guilds.members.read` dan belum dipakai.
 
 ## Kebutuhan non-fungsional
 
@@ -173,7 +173,7 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 **Milestone (berurutan; tanggal menyusul)**
 
 1. **M1 — Game di web:** proyek Next.js, logika game, dan UI meja dikembangkan di browser dengan mock user, lalu bisa dimainkan lewat URL Vercel. Belum menyentuh Discord. — selesai: https://uno-olive-five.vercel.app
-2. **M2 — Fase 1 selesai:** app didaftarkan di Discord, `ready()` dan login (nama dan avatar) berjalan, game lawan bot bisa dimainkan di Discord, plus test simulasi lulus. Desain: [spec Fase 1](docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md).
+2. **M2 — Fase 1 selesai:** app didaftarkan di Discord, `ready()` dan login (nama dan avatar) berjalan, game lawan bot bisa dimainkan di Discord, plus test simulasi lulus. Desain: [spec Fase 1](docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md). — selesai: diuji di Discord web dan HP.
 3. **M3 — Spike realtime:** dua pemain di satu Activity melihat kondisi yang sama lewat WebSocket.
 4. **M4 — Fase 2 selesai:** lobby, game multiplayer, reconnect, dan bot pengganti.
 5. **M5 — Fase 3:** tombol UNO, aturan rumah, animasi.
