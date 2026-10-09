@@ -74,6 +74,12 @@ Pekerjaan dibagi tiga fase. Setiap fase bisa dirilis dan dipakai sendiri, tanpa 
 - Animasi kartu dan efek suara.
 - Riwayat menang per server Discord.
 
+**Menu sebelum meja (diminta Oct 9, 2026; dikerjakan setelah spike realtime)**
+
+- Layar menu sebelum masuk meja. Isinya belum diputuskan; kandidat: layar judul dengan tombol Main, cara bermain/aturan, pengaturan (kecepatan bot, suara, aturan rumah), pilih mode (lawan bot atau bersama teman di channel).
+- Dirancang bersama lobby Fase 2, supaya tidak dirombak saat multiplayer datang.
+- Tetap menjaga target < 30 detik dari membuka Activity sampai kartu pertama: mulai main cukup satu ketukan.
+
 ## Kebutuhan fungsional
 
 Aturan mengikuti UNO standar 108 kartu. Satu-satunya pengecualian adalah aturan rumah opsional di Fase 3.
