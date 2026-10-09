@@ -15,8 +15,16 @@ describe('handLayout', () => {
     expect(handLayout(14, 340, 52)).toEqual({ rows: 2, perRow: 7, step: 48 });
   });
 
-  it('lebih dari 14 kartu selalu 2 baris, walau layar lebar', () => {
-    expect(handLayout(15, 1000, 60)).toEqual({ rows: 2, perRow: 8, step: 66 });
+  it('HP: lebih dari 14 kartu selalu 2 baris', () => {
+    expect(handLayout(15, 336, 52)).toMatchObject({ rows: 2, perRow: 8 });
+  });
+
+  it('desktop: lebih dari 14 kartu tetap 1 baris selama muat', () => {
+    expect(handLayout(15, 1000, 60)).toEqual({ rows: 1, perRow: 15, step: 66 });
+  });
+
+  it('desktop: pindah ke 2 baris hanya kalau terlalu rapat', () => {
+    expect(handLayout(50, 1000, 60).rows).toBe(2); // (1000-60)/49 ≈ 19 px < 24
   });
 
   it('25 kartu di HP 360 px: 2 baris, jarak sekitar 24 px', () => {

@@ -1,22 +1,23 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: grid;
-  align-items: end;
-  justify-items: center;
-  background: rgb(0 0 0 / 0.55);
+.sheet, .end {
+  border: 0;
+  color: var(--ink);
+  background: var(--felt-edge);
 }
 
+.sheet::backdrop, .end::backdrop { background: rgb(0 0 0 / 0.55); }
+
+/* lembar dari bawah; display hanya saat [open] supaya dialog tertutup tetap tersembunyi */
 .sheet {
+  margin: auto auto 0;
   width: min(100%, 480px);
-  display: grid;
+  max-width: 100%;
   gap: 12px;
   padding: 16px 16px max(16px, env(safe-area-inset-bottom));
   border-radius: 16px 16px 0 0;
-  background: var(--felt-edge);
   animation: up 0.2s ease-out;
 }
+
+.sheet[open], .end[open] { display: grid; }
 
 @keyframes up { from { transform: translateY(100%); } }
 
@@ -44,13 +45,10 @@
 .color:focus-visible, .cancel:focus-visible, .again:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 .end {
-  align-self: center;
-  display: grid;
   justify-items: center;
   gap: 12px;
   padding: 24px 32px;
   border-radius: 16px;
-  background: var(--felt-edge);
 }
 
 .avatar {

@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UNO Discord Activity
 
-## Getting Started
+UNO untuk dimainkan bersama di voice channel Discord. Fase 1: 1 pemain lawan 3 bot, dengan login Discord.
 
-First, run the development server:
+- Produksi: https://uno-olive-five.vercel.app
+- Kebutuhan produk: [PRD.md](PRD.md)
+- Desain Fase 1: [docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md](docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Menjalankan
+
+Butuh Node 26.
+
+```
+npm install
+npm run dev     # http://localhost:3000, tanpa Discord memakai pemain "Kamu"
+npm test        # test aturan, simulasi 500 game, route token
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Di browser biasa (tanpa `frame_id` di URL) app langsung memakai mock user, jadi UI bisa dikembangkan tanpa Discord.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variable
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Nama | Isi | Dipakai |
+| --- | --- | --- |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | Application ID dari Discord Developer Portal | browser (SDK) dan `/api/token` |
+| `DISCORD_CLIENT_SECRET` | Client Secret (OAuth2) | hanya server (`/api/token`) |
 
-## Learn More
+Lokal: tulis di `.env.local`. Produksi: Vercel → Settings → Environment Variables.
 
-To learn more about Next.js, take a look at the following resources:
+## Discord Developer Portal
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- OAuth2 → Redirects: `https://127.0.0.1`
+- Activities → Settings: aktif
+- Activities → URL Mappings: `/` → domain Vercel (tanpa `https://`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Uji di Discord web (https://discord.com/app) supaya Console bisa dibuka dengan F12.
 
-## Deploy on Vercel
+## Struktur
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Path | Isi |
+| --- | --- |
+| `lib/uno.ts` | Logika game murni: `newGame`, `apply`, `botAction`, `viewFor`. Dipakai ulang oleh server di Fase 2. |
+| `lib/hand-layout.ts` | Jarak dan jumlah baris kartu di tangan |
+| `lib/discord-user.ts` | Nama dan avatar dari user Discord |
+| `app/api/token/route.ts` | Tukar kode OAuth menjadi access token |
+| `components/` | `DiscordGate` (SDK + login), `Game`, `Table`, `Hand`, `Card`, `Overlays` |
+| `index.html` | Prototipe awal satu file (referensi) |

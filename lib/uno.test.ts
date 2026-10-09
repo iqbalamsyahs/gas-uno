@@ -296,3 +296,15 @@ describe('simulasi', () => {
     }
   }, 30_000); // simulasi bisa > 5 detik saat mesin sibuk
 });
+
+describe('plays (pemicu animasi kartu mendarat)', () => {
+  it('naik hanya saat kartu dimainkan, tidak saat ambil atau kocok ulang', () => {
+    expect(newGame(NAMES, 1).plays).toBe(0);
+    const played = apply(table(), { type: 'play', seat: 0, index: 0 });
+    expect(played.plays).toBe(1);
+    const reshuffled = apply(table({ deck: [], discard: [c('green', '8'), c('yellow', '6'), c('red', '5')] }), { type: 'draw', seat: 0 });
+    expect(reshuffled.discard).toHaveLength(1);
+    expect(reshuffled.plays).toBe(0);
+    expect(viewFor(played, 0).plays).toBe(1);
+  });
+});

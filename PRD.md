@@ -145,7 +145,7 @@ Server realtime dibuat terpisah dari Vercel, karena fungsi serverless Vercel tid
 | Frontend | Next.js (App Router) + TypeScript | Komponen game memakai `'use client'`; SDK dijalankan di dalam `useEffect` |
 | SDK | `@discord/embedded-app-sdk` | Di-bundle bersama app, karena CDN luar diblokir CSP Discord |
 | Logika game | Modul TypeScript murni | Dipakai bersama oleh client (Fase 1) dan server (Fase 2) |
-| Auth | OAuth2 lewat SDK + route handler `/api/token` | Membutuhkan `DISCORD_CLIENT_ID` dan `DISCORD_CLIENT_SECRET` |
+| Auth | OAuth2 lewat SDK + route handler `/api/token` | Membutuhkan `NEXT_PUBLIC_DISCORD_CLIENT_ID` dan `DISCORD_CLIENT_SECRET` |
 | Realtime | Node.js + `ws` atau Socket.IO di Railway/Fly.io; alternatifnya PartyKit | Keputusan masih terbuka, lihat bagian Risiko |
 | Hosting | Vercel untuk Next.js | Domain Vercel diisi di Root Mapping |
 | Development | `cloudflared tunnel` ke localhost | Hot reload bisa tidak jalan lewat proxy; refresh manual |

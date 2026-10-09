@@ -13,6 +13,7 @@ export type GameState = {
   drawn: boolean; // pemain giliran ini sudah ambil kartu yang bisa dimainkan
   winner: number | null;
   log: string;
+  plays: number; // jumlah kartu yang sudah dimainkan; pemicu animasi kartu mendarat
   seed: number;
 };
 
@@ -67,7 +68,7 @@ export function newGame(names: string[], seed = Date.now()): GameState {
 
   const s: GameState = {
     names, deck, discard: [], hands: names.map(() => []),
-    turn: 0, dir: 1, color: 'red', drawn: false, winner: null, log: '', seed: seed >>> 0,
+    turn: 0, dir: 1, color: 'red', drawn: false, winner: null, log: '', plays: 0, seed: seed >>> 0,
   };
   shuffle(s, s.deck);
   for (let p = 0; p < names.length; p++) drawCards(s, p, 7);
@@ -129,6 +130,7 @@ export function apply(state: GameState, a: Action): GameState {
 
   hand.splice(a.index, 1);
   s.discard.push(card);
+  s.plays++;
   s.color = card.c === 'wild' ? a.color! : card.c;
   s.log = `${name} main ${cardLabel(card)}${card.c === 'wild' ? ` → ${COLOR_NAME[s.color]}` : ''}`;
 
@@ -171,7 +173,7 @@ export type PlayerView = {
   hand: Card[];
   counts: number[];
   top: Card;
-  discardCount: number;
+  plays: number;
   color: Color;
   turn: number;
   drawn: boolean;
@@ -187,7 +189,7 @@ export function viewFor(s: GameState, seat: number): PlayerView {
     hand: s.hands[seat],
     counts: s.hands.map((h) => h.length),
     top: top(s),
-    discardCount: s.discard.length,
+    plays: s.plays,
     color: s.color,
     turn: s.turn,
     drawn: s.drawn,

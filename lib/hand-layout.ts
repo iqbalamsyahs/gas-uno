@@ -1,10 +1,12 @@
 // step = jarak antar tepi kiri kartu. Kurang dari lebar kartu berarti bertumpuk.
+// HP (tangan < 600 px): > 14 kartu selalu 2 baris. Layar lebar: 2 baris hanya kalau terlalu rapat.
 // ponytail: maksimal 2 baris; di atas ~28 kartu pada 360 px jarak bisa turun di bawah 24 px. Tambah baris ketiga kalau itu terjadi di game nyata.
 export function handLayout(count: number, width: number, cardW: number, gap = 6, minStep = 24) {
   const stepFor = (n: number) => (n <= 1 ? cardW + gap : Math.min(cardW + gap, (width - cardW) / (n - 1)));
+  const phone = width < 600;
   let rows: 1 | 2 = 1;
   let perRow = count;
-  if (count > 14 || stepFor(count) < minStep) {
+  if ((phone && count > 14) || stepFor(count) < minStep) {
     rows = 2;
     perRow = Math.ceil(count / 2);
   }

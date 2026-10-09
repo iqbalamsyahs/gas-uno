@@ -5,7 +5,7 @@ const req = (body: unknown) => new Request('http://localhost/api/token', { metho
 
 describe('POST /api/token', () => {
   beforeEach(() => {
-    process.env.DISCORD_CLIENT_ID = 'id-123';
+    process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID = 'id-123';
     process.env.DISCORD_CLIENT_SECRET = 'secret-456';
   });
   afterEach(() => vi.unstubAllGlobals());
@@ -31,6 +31,7 @@ describe('POST /api/token', () => {
     vi.stubGlobal('fetch', vi.fn());
     expect((await POST(req({}))).status).toBe(400);
     expect((await POST(new Request('http://localhost/api/token', { method: 'POST', body: 'bukan json' }))).status).toBe(400);
+    expect((await POST(req(null))).status).toBe(400);
   });
 
   it('502 kalau Discord menolak, tanpa membocorkan secret', async () => {
@@ -38,5 +39,14 @@ describe('POST /api/token', () => {
     const res = await POST(req({ code: 'basi' }));
     expect(res.status).toBe(502);
     expect(await res.text()).not.toContain('secret-456');
+  });
+
+  it('mencatat jawaban Discord saat gagal, supaya secret yang salah terlihat di log', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"error":"invalid_client"}', { status: 401 })));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await POST(req({ code: 'abc' }));
+    expect(spy).toHaveBeenCalledWith('discord oauth2/token', 401, '{"error":"invalid_client"}');
+    expect(JSON.stringify(spy.mock.calls)).not.toContain('secret-456');
+    spy.mockRestore();
   });
 });

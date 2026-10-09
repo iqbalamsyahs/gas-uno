@@ -16,11 +16,16 @@ type Props = {
   onRestart: () => void;
 };
 
-function OpponentChip({ name, count, active }: { name: string; count: number; active: boolean }) {
+function SeatChip({ name, count, active, avatarUrl = null }: { name: string; count: number; active: boolean; avatarUrl?: string | null }) {
   const initials = name.split(' ').map((w) => w[0]).join('');
   return (
     <div className={s.chip} data-active={active} role="img" aria-label={`${name}, ${count} kartu${active ? ', sedang giliran' : ''}`}>
-      <span className={s.avatar} aria-hidden>{initials}</span>
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- avatar Discord kecil, next/image tidak perlu
+        <img src={avatarUrl} alt="" className={s.avatar} />
+      ) : (
+        <span className={s.avatar} aria-hidden>{initials}</span>
+      )}
       <span className={s.chipName} aria-hidden>{name}</span>
       <span className={s.count} aria-hidden>{count}</span>
     </div>
@@ -40,7 +45,7 @@ export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onResta
     <main className={s.table}>
       <div className={s.opps}>
         {opponents.map((o) => (
-          <OpponentChip key={o.seat} name={o.name} count={view.counts[o.seat]} active={view.turn === o.seat && view.winner === null} />
+          <SeatChip key={o.seat} name={o.name} count={view.counts[o.seat]} active={view.turn === o.seat && view.winner === null} />
         ))}
       </div>
 
@@ -49,7 +54,7 @@ export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onResta
           <button type="button" className={s.deck} onClick={onDraw} disabled={!myTurn || view.drawn} aria-label="Ambil kartu">
             <Card />
           </button>
-          <Card key={view.discardCount} card={view.top} className={s.played} />
+          <Card key={view.plays} card={view.top} className={s.played} />
         </div>
         <p className={s.color}>
           {SYMBOL[view.color]} {COLOR_NAME[view.color]}
@@ -61,7 +66,11 @@ export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onResta
       </div>
 
       <div className={s.mine}>
-        {myTurn && <p className={s.yourTurn}>Giliran kamu</p>}
+        <div className={s.me}>
+          <SeatChip name={view.names[view.seat]} count={view.hand.length} active={myTurn} avatarUrl={avatarUrl} />
+          {/* selalu dirender supaya screen reader membacakan saat isinya berubah */}
+          <p className={s.yourTurn} aria-live="polite">{myTurn ? 'Giliran kamu' : ''}</p>
+        </div>
         <Hand cards={view.hand} playable={playable} myTurn={myTurn} onPlay={play} />
       </div>
 
