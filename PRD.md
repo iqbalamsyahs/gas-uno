@@ -140,11 +140,11 @@ Discord membuka halaman Next.js di dalam iframe. Semua request keluar wajib lewa
 flowchart LR
   A[Activity di Discord<br/>Next.js di iframe + Embedded App SDK] --> P[Proxy Discord<br/>id-app.discordsays.com, path /.proxy]
   P --> N[Next.js di Vercel<br/>halaman + /api/token]
-  P -- WebSocket --> R[Server realtime - Fase 2<br/>satu meja per instanceId]
+  P -- WebSocket /ws --> R[Cloudflare Durable Object - Fase 2<br/>satu meja per instanceId]
   N -- client secret --> D[Discord OAuth2 API]
 ```
 
-Server realtime dibuat terpisah dari Vercel, karena fungsi serverless Vercel tidak bisa menahan koneksi WebSocket yang terus terbuka. Server ini didaftarkan di URL Mappings dengan prefix sendiri, misalnya `/ws`.
+Server realtime dibuat terpisah dari Vercel, karena fungsi serverless Vercel tidak bisa menahan koneksi WebSocket yang terus terbuka. Server ini didaftarkan di URL Mappings dengan prefix `/ws`; browser tersambung ke `/.proxy/ws/...`.
 
 | Bagian | Pilihan | Catatan |
 | --- | --- | --- |
@@ -152,7 +152,7 @@ Server realtime dibuat terpisah dari Vercel, karena fungsi serverless Vercel tid
 | SDK | `@discord/embedded-app-sdk` | Di-bundle bersama app, karena CDN luar diblokir CSP Discord |
 | Logika game | Modul TypeScript murni | Dipakai bersama oleh client (Fase 1) dan server (Fase 2) |
 | Auth | OAuth2 lewat SDK + route handler `/api/token` | Membutuhkan `NEXT_PUBLIC_DISCORD_CLIENT_ID` dan `DISCORD_CLIENT_SECRET` |
-| Realtime | Node.js + `ws` atau Socket.IO di Railway/Fly.io; alternatifnya PartyKit | Keputusan masih terbuka, lihat bagian Risiko |
+| Realtime | Cloudflare Workers + Durable Objects (WebSocket hibernation), satu Durable Object per `instanceId`, di akun Cloudflare sendiri | Diputuskan lewat spike M3 (Oct 9, 2026). Paket Workers gratis: 100.000 request/hari, 13.000 GB-detik/hari; lewat batas = ditolak, bukan ditagih |
 | Hosting | Vercel untuk Next.js | Domain Vercel diisi di Root Mapping |
 | Development | `cloudflared tunnel` ke localhost | Hot reload bisa tidak jalan lewat proxy; refresh manual |
 | Test | Vitest | Simulasi game bot dan test aturan |
@@ -163,15 +163,16 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 
 | Risiko | Dampak | Mitigasi |
 | --- | --- | --- |
-| WebSocket gagal lewat proxy atau URL Mapping | Multiplayer tidak jalan | Buat spike koneksi WSS lewat `/.proxy` di awal Fase 2, sebelum membangun lobby |
+| WebSocket gagal lewat proxy atau URL Mapping | Multiplayer tidak jalan | Terbukti jalan di spike M3: WSS lewat `/.proxy/ws`, dua akun sinkron, ping 27–81 ms |
 | CSP Discord memblokir aset atau font dari luar | Tampilan rusak | Semua aset di-bundle atau di-host sendiri; font memakai bawaan sistem |
 | Hot reload Next.js tidak jalan lewat tunnel | Development lambat | Kembangkan UI di browser biasa memakai mock SDK, lalu uji di Discord secara berkala |
 | Pemain keluar di tengah game | Game macet | Bot mengambil alih setelah 60 detik |
-| Biaya hosting server realtime | Biaya bulanan | Mulai dari tier gratis atau termurah; meja dihapus saat kosong |
+| Biaya hosting server realtime | Biaya bulanan | Paket Workers gratis; Durable Object tidur saat meja diam (hibernation) |
+| Activity belum diverifikasi | Hanya pemilik, tim, dan App Testers yang bisa memakai, dan hanya di server < 25 anggota | Tambahkan teman sebagai App Testers; ajukan verifikasi sebelum dibuka untuk umum |
 
 **Pertanyaan terbuka**
 
-- [ ] Server realtime memakai Node + `ws` sendiri atau layanan seperti PartyKit?
+- [x] Server realtime: Cloudflare Durable Objects (keputusan spike M3).
 - [ ] Apakah Activity juga perlu bisa dimainkan di DM dan text channel, atau cukup di voice channel?
 - [ ] Maksimal 4 pemain, atau sampai 6–10 seperti UNO aslinya?
 - [ ] Aturan rumah mana yang paling diinginkan untuk Fase 3?
@@ -180,6 +181,6 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 
 1. **M1 — Game di web:** proyek Next.js, logika game, dan UI meja dikembangkan di browser dengan mock user, lalu bisa dimainkan lewat URL Vercel. Belum menyentuh Discord. — selesai: https://uno-olive-five.vercel.app
 2. **M2 — Fase 1 selesai:** app didaftarkan di Discord, `ready()` dan login (nama dan avatar) berjalan, game lawan bot bisa dimainkan di Discord, plus test simulasi lulus. Desain: [spec Fase 1](docs/superpowers/specs/2026-10-09-uno-fase1-ui-design.md). — selesai: diuji di Discord web dan HP.
-3. **M3 — Spike realtime:** dua pemain di satu Activity melihat kondisi yang sama lewat WebSocket.
+3. **M3 — Spike realtime:** dua pemain di satu Activity melihat kondisi yang sama lewat WebSocket. — selesai Oct 9, 2026: dua akun di satu voice channel, penghitung sinkron, ping 27–30 ms dan 44–81 ms (perkiraan jeda antar pemain 40–60 ms).
 4. **M4 — Fase 2 selesai:** lobby, game multiplayer, reconnect, dan bot pengganti.
 5. **M5 — Fase 3:** tombol UNO, aturan rumah, animasi.
