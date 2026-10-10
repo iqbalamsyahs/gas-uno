@@ -33,7 +33,7 @@ export function join(room: Room, user: JoiningUser, _now: number): Room {
   if (seatIdx >= 0) {
     const seats = [...room.seats];
     seats[seatIdx] = { ...seats[seatIdx], connected: true, disconnectedAt: null, botControlled: false };
-    return { ...room, seats, v: room.v + 1 };
+    return { ...room, seats, hostId: room.hostId ?? user.id, v: room.v + 1 };
   }
   if (room.queue.some((q) => q.id === user.id)) return room;
 

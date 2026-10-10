@@ -102,11 +102,20 @@ export class Table extends DurableObject<Env> {
     await this.scheduleExpireAlarm(next);
   }
 
+  private botTimer: ReturnType<typeof setTimeout> | null = null;
+
   private scheduleBotTurn(room: Room) {
+    // Setiap perubahan room (termasuk join/leave/expire yang tidak menyentuh game) menjadwalkan ulang
+    // kalau masih giliran bot — bersihkan timer lama dulu supaya tidak dobel/mempercepat giliran bot.
+    if (this.botTimer !== null) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
     if (room.phase !== 'playing' || !room.game) return;
     const seat = room.seats[room.game.turn];
     if (!seat || !(seat.bot || seat.botControlled)) return;
-    setTimeout(() => {
+    this.botTimer = setTimeout(() => {
+      this.botTimer = null;
       this.apply((r) => botTurn(r)).catch(() => {});
     }, BOT_DELAY);
   }

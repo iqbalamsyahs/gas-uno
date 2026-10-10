@@ -77,12 +77,34 @@ export default function DiscordGate() {
   if (status.kind === 'ready') {
     const { session } = status;
     if (session.instanceId && session.accessToken) {
-      return <OnlineGame token={session.accessToken} instanceId={session.instanceId} />;
+      return (
+        <OnlineGame
+          token={session.accessToken}
+          instanceId={session.instanceId}
+          onTokenInvalid={() => {
+            // token ditolak server: minta SDK login ulang dari awal, bukan sekadar membuka socket baru dengan token lama
+            connecting = null;
+            sdk = null;
+            setStatus({ kind: 'loading' });
+            setAttempt((a) => a + 1);
+          }}
+        />
+      );
     }
     // Pengecualian development: browser biasa + NEXT_PUBLIC_WS_URL terisi → mode online dengan token dev.
     if (process.env.NEXT_PUBLIC_WS_URL) {
       devId ??= Math.random().toString(36).slice(2, 8);
-      return <OnlineGame token={`dev:${devId}:${session.user.name} ${devId}`} instanceId="dev" />;
+      return (
+        <OnlineGame
+          token={`dev:${devId}:${session.user.name} ${devId}`}
+          instanceId="dev"
+          onTokenInvalid={() => {
+            devId = null;
+            setStatus({ kind: 'loading' });
+            setAttempt((a) => a + 1);
+          }}
+        />
+      );
     }
     return <Game user={session.user} />;
   }

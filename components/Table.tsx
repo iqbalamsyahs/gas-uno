@@ -79,7 +79,9 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, onPlay
   const opponents = view.names.map((name, seat) => ({ name, seat })).filter((o) => o.seat !== view.seat);
 
   const oppsRef = useRef<HTMLDivElement>(null);
-  const [oppsSize, setOppsSize] = useState({ width: 336, height: 130 });
+  // 360x130: sama dengan ukuran yang diuji di lib/seat-layout.test.ts; dipakai sebentar saja
+  // sampai ResizeObserver melaporkan ukuran kontainer sungguhan.
+  const [oppsSize, setOppsSize] = useState({ width: 360, height: 130 });
   useEffect(() => {
     const el = oppsRef.current!;
     const ro = new ResizeObserver(([entry]) => setOppsSize({ width: entry.contentRect.width, height: entry.contentRect.height }));

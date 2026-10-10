@@ -25,12 +25,12 @@ describe('seatLayout', () => {
     }
   });
 
-  it('1–9 lawan di lebar HP (360px): tidak bertumpuk (jarak antar kursi > 30px)', () => {
+  it('1–9 lawan di lebar HP (360px): tidak bertumpuk (jarak antar kursi > 34px)', () => {
     for (let n = 1; n <= 9; n++) {
       const pts = seatLayout(n, 360, 130);
       for (let i = 0; i < pts.length; i++)
         for (let j = i + 1; j < pts.length; j++)
-          expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThan(30);
+          expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThan(34);
     }
   });
 
@@ -39,7 +39,7 @@ describe('seatLayout', () => {
       const pts = seatLayout(n, 1024, 150);
       for (let i = 0; i < pts.length; i++)
         for (let j = i + 1; j < pts.length; j++)
-          expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThan(30);
+          expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThan(34);
     }
   });
 

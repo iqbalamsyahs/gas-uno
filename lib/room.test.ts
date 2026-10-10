@@ -98,6 +98,17 @@ describe('expire', () => {
     const r = join(newRoom(), USER('u1'), 0);
     expect(expire(r, 1_000_000)).toBe(r);
   });
+
+  it('host kosong (semua manusia putus saat playing) terisi lagi saat salah satu manusia kembali', () => {
+    let r = join(join(newRoom(), USER('u1'), 0), USER('u2'), 0);
+    r = { ...r, phase: 'playing' };
+    r = leave(r, 'u1', 0);
+    r = leave(r, 'u2', 0);
+    r = expire(r, 60_000); // keduanya botControlled (bukan dihapus, phase playing); hostId -> null
+    expect(r.hostId).toBeNull();
+    const rejoined = join(r, USER('u1'), 70_000);
+    expect(rejoined.hostId).toBe('u1');
+  });
 });
 
 function lobbyOf(n: number): Room {

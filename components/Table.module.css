@@ -14,7 +14,21 @@
   .opps { min-height: 170px; }
 }
 
-.arc { position: absolute; transform: translate(-50%, -50%); }
+.arc {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 92px;
+  padding: 2px 6px 2px 2px;
+  gap: 4px;
+}
+
+/* ponytail: kursi lawan dipersempit (avatar lebih kecil, max-width di atas) supaya muat lebih rapat
+   di busur; pada 8-9 lawan di layar 360px kursi masih bisa berdekatan. Kalau perlu jaminan tidak
+   bertumpuk sama sekali di jumlah pemain maksimal, perlu desain ulang kerapatan kursi (mis. avatar
+   lebih kecil lagi khusus n besar, atau susun dua baris) — belum dikerjakan di sini. */
+.arc .avatar { width: 22px; height: 22px; font-size: 9px; }
+
+.arc .count { padding: 0 4px; font-size: 11px; }
 
 .chip[data-dim='true'] { opacity: 0.55; }
 
@@ -48,7 +62,7 @@
   object-fit: cover;
 }
 
-.chipName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chipName { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .count { padding: 0 6px; border-radius: 6px; background: #fff; color: var(--felt); font-weight: 800; }
 

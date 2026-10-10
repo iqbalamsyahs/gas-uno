@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 // `SELF` is declared by `cloudflare:test` (verified in node_modules/@cloudflare/vitest-plugin/types/cloudflare-test.d.ts).
 // It's marked deprecated there in favor of `cloudflare:workers`'s `exports.default.fetch(req, env, ctx)`,
 // but that needs manually building `env`/`ExecutionContext` — SELF is simplest for this request/response test.
-import { env, SELF } from 'cloudflare:test';
+import { env, runInDurableObject, SELF } from 'cloudflare:test';
+import { newGame } from '../lib/uno';
+import type { Room } from '../lib/room';
+import type { Env } from './worker';
+
+// `env` dari 'cloudflare:test' bertipe `Cloudflare.Env` ambien (kosong tanpa `wrangler types`
+// digenerate); binding sungguhan sama persis dengan `Env` yang diekspor worker.ts, jadi di-cast di sini.
+const typedEnv = env as unknown as Env;
 
 // Setiap kasus uji pakai instanceId (nama Durable Object) sendiri, supaya tidak berbagi
 // satu meja/koneksi dengan kasus uji lain yang berjalan dalam proses yang sama.
@@ -150,6 +157,98 @@ describe('penanganan pesan', () => {
     const room2 = await helloDev(ws2, 'u1', 'Rina');
     expect((await closed).code).toBe(4002);
     expect(room2.seats[0]).toMatchObject({ id: 'dev-u1', connected: true });
+
+    // Bukti leave() dari socket lama tidak sempat/pernah jalan untuk identitas ini: pancing broadcast
+    // NYATA lagi (lewat koneksi ketiga yang join) dan pastikan dev-u1 masih connected di snapshot itu —
+    // kalau leave() race sempat jalan, kursi ini sudah keburu connected:false sebelum snapshot ini.
+    const ws3 = await openSocket('tab-duplikat');
+    const p2 = nextMessage(ws2);
+    await helloDev(ws3, 'u3', 'Caca');
+    const room2Again = await p2;
+    expect(room2Again.seats[0]).toMatchObject({ id: 'dev-u1', connected: true });
     ws2.close();
+    ws3.close();
+  });
+});
+
+describe('takeover setelah 60 detik', () => {
+  it('alarm menjadikan kursi yang terputus botControlled, lalu bot mengambil alih gilirannya', async () => {
+    const roomId = 'takeover';
+    const id = typedEnv.TABLE.idFromName(roomId);
+    const stub = typedEnv.TABLE.get(id);
+
+    // disconnectedAt dipaksa 61 detik di masa lalu, supaya expire() (dipicu lewat pemanggilan
+    // langsung alarm() di bawah, bukan menunggu 60 detik sungguhan) langsung memenuhi syaratnya.
+    const game = newGame(['Rina', 'Bot 1'], 1);
+    const fakeRoom: Room = {
+      phase: 'playing',
+      seats: [
+        { id: 'dev-u1', name: 'Rina', avatarUrl: null, bot: false, connected: false, disconnectedAt: Date.now() - 61_000, botControlled: false },
+        { id: 'bot-1', name: 'Bot 1', avatarUrl: null, bot: true, connected: true, disconnectedAt: null, botControlled: false },
+      ],
+      queue: [],
+      hostId: 'dev-u1',
+      game: { ...game, turn: 0 }, // giliran Rina (kursi yang akan diambil alih bot)
+      v: 5,
+    };
+
+    // alarm() adalah metode publik yang sama yang dipanggil runtime Cloudflare sungguhan saat alarm
+    // menyala; memanggilnya langsung di sini menghindari ambiguitas kapan persis alarm lewat-waktu
+    // otomatis diproses oleh miniflare, sekaligus tetap menguji kode produksi yang sama persis.
+    // `stub` di-cast `any`: resolusi generic runInDurableObject<O> terhadap kelas Table yang generic
+    // (extends DurableObject<Env>) membuat TypeScript coba instansiasi tipe yang sangat dalam.
+    await (runInDurableObject as any)(stub, async (instance: any, state: any) => {
+      await state.storage.put('room', fakeRoom);
+      await instance.alarm();
+      const afterAlarm = (await state.storage.get('room')) as Room;
+      expect(afterAlarm!.seats[0]).toMatchObject({ id: 'dev-u1', connected: false, botControlled: true });
+      expect(afterAlarm!.v).toBeGreaterThan(fakeRoom.v);
+    });
+
+    // botControlled + masih giliran kursi itu -> scheduleBotTurn ikut terjadwal dari apply() di dalam
+    // alarm() tadi; tunggu BOT_DELAY (900ms) sungguhan sampai bot benar-benar memainkan gilirannya.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
+      const afterBotMove = (await state.storage.get('room')) as Room;
+      expect(afterBotMove!.v).toBeGreaterThan(fakeRoom.v + 1);
+      expect(afterBotMove!.seats[0]).toMatchObject({ id: 'dev-u1', botControlled: true });
+    });
+  }, 10_000);
+});
+
+describe('penjadwalan giliran bot', () => {
+  it('scheduleBotTurn membersihkan timer lama sebelum menjadwalkan yang baru (tidak dobel saat event lain terjadi menjelang giliran bot)', async () => {
+    const id = typedEnv.TABLE.idFromName('bot-timer-dedup');
+    const stub = typedEnv.TABLE.get(id);
+    const fakeRoom = {
+      phase: 'playing',
+      seats: [{ id: 'bot-1', name: 'Bot 1', avatarUrl: null, bot: true, connected: true, disconnectedAt: null, botControlled: false }],
+      queue: [],
+      hostId: null,
+      game: { turn: 0, winner: null },
+      v: 1,
+    };
+    await (runInDurableObject as any)(stub, (instance: any) => {
+      const origSetTimeout = globalThis.setTimeout;
+      const origClearTimeout = globalThis.clearTimeout;
+      let nextId = 1;
+      const active = new Set<number>();
+      (globalThis as any).setTimeout = (fn: unknown, ms: number) => {
+        const timerId = nextId++;
+        active.add(timerId);
+        return timerId;
+      };
+      (globalThis as any).clearTimeout = (timerId: number) => {
+        active.delete(timerId);
+      };
+      try {
+        instance.scheduleBotTurn(fakeRoom);
+        instance.scheduleBotTurn(fakeRoom); // event kedua menjelang giliran bot yang sama
+        expect(active.size).toBe(1);
+      } finally {
+        globalThis.setTimeout = origSetTimeout;
+        globalThis.clearTimeout = origClearTimeout;
+      }
+    });
   });
 });

@@ -22,7 +22,7 @@ type RoomMessage = {
   winner: number | null;
 };
 
-type Props = { token: string; instanceId: string };
+type Props = { token: string; instanceId: string; onTokenInvalid?: () => void };
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000];
 const GIVE_UP_AFTER_MS = 30_000;
@@ -34,10 +34,11 @@ function wsUrl(instanceId: string): string {
   return `${scheme}://${location.host}/.proxy/ws/room/${instanceId}`;
 }
 
-export default function OnlineGame({ token, instanceId }: Props) {
+export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props) {
   const [room, setRoom] = useState<RoomMessage | null>(null);
   const [connected, setConnected] = useState(false);
   const [fatal, setFatal] = useState<'token' | 'instance' | 'unreachable' | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -78,17 +79,27 @@ export default function OnlineGame({ token, instanceId }: Props) {
       clearTimeout(retryTimer);
       wsRef.current?.close();
     };
-  }, [token, instanceId]);
+  }, [token, instanceId, retryCount]);
 
   const send = (payload: Record<string, unknown>) => wsRef.current?.send(JSON.stringify(payload));
 
   if (fatal) {
     const message =
       fatal === 'token' ? 'Gagal masuk ke meja' : fatal === 'instance' ? 'Meja tidak ditemukan' : 'Tidak bisa menyambung ke server';
+    const retry = () => {
+      // token kedaluwarsa/tidak valid butuh token baru (login ulang), bukan sekadar membuka socket yang sama lagi
+      if (fatal === 'token' && onTokenInvalid) {
+        setFatal(null);
+        onTokenInvalid();
+        return;
+      }
+      setFatal(null);
+      setRetryCount((c) => c + 1);
+    };
     return (
       <div className={gateStyles.screen}>
         <p>{message}</p>
-        <button type="button" className={gateStyles.retry} onClick={() => setFatal(null)}>Coba lagi</button>
+        <button type="button" className={gateStyles.retry} onClick={retry}>Coba lagi</button>
       </div>
     );
   }
