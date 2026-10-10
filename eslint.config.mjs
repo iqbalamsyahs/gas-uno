@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // server/ punya tsconfig dan tipe Workers sendiri, beda dari Next.js
+    "server/**",
   ]),
 ]);
 

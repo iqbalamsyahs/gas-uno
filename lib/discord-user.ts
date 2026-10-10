@@ -2,7 +2,7 @@ export type User = { name: string; avatarUrl: string | null };
 
 export const MOCK_USER: User = { name: 'Kamu', avatarUrl: null };
 
-type DiscordUser = { id: string; username: string; global_name?: string | null; avatar?: string | null };
+export type DiscordUser = { id: string; username: string; global_name?: string | null; avatar?: string | null };
 
 // ponytail: nickname server butuh scope guilds.members.read; sekarang pakai global_name lalu username
 export function displayUser(u: DiscordUser): User {

@@ -27,7 +27,8 @@ export function newRoom(): Room {
   return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0 };
 }
 
-export function join(room: Room, user: JoiningUser, now: number): Room {
+// now: belum dipakai (rejoin tidak butuh waktu saat ini), dipertahankan supaya tanda tangan konsisten dengan leave/expire
+export function join(room: Room, user: JoiningUser, _now: number): Room {
   const seatIdx = room.seats.findIndex((s) => s.id === user.id);
   if (seatIdx >= 0) {
     const seats = [...room.seats];

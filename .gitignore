@@ -33,6 +33,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+server/.dev.vars
+
+# server/ adalah paket npm terpisah (/node_modules di atas hanya anchor ke root)
+server/node_modules
+server/.wrangler
 
 # vercel
 .vercel
