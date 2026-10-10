@@ -8,7 +8,17 @@
   padding: 12px 12px max(12px, env(safe-area-inset-bottom));
 }
 
-.opps { grid-area: opps; display: flex; justify-content: space-between; gap: 8px; }
+.opps { grid-area: opps; position: relative; min-height: 130px; }
+
+@media (min-width: 720px) {
+  .opps { min-height: 170px; }
+}
+
+.arc { position: absolute; transform: translate(-50%, -50%); }
+
+.chip[data-dim='true'] { opacity: 0.55; }
+
+.badge { margin-left: 2px; }
 
 .chip {
   min-width: 0;
@@ -75,14 +85,6 @@
 .me { display: flex; align-items: center; gap: 10px; min-height: 36px; }
 
 .yourTurn { margin: 0; min-width: 6em; font-size: 12px; font-weight: 700; color: var(--accent); }
-
-@media (min-width: 720px) {
-  .table { grid-template: '. top .' auto 'left center right' 1fr 'mine mine mine' auto / 1fr 2fr 1fr; }
-  .opps { display: contents; }
-  .opps > :nth-child(1) { grid-area: left; align-self: center; justify-self: start; }
-  .opps > :nth-child(2) { grid-area: top; justify-self: center; }
-  .opps > :nth-child(3) { grid-area: right; align-self: center; justify-self: end; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .chip[data-active='true'], .played { animation: none; }

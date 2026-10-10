@@ -6,7 +6,7 @@ import s from './Overlays.module.css';
 
 // <dialog> bawaan: showModal() mengunci fokus dan membuat isi di belakangnya tidak bisa disentuh.
 // Fokus dikembalikan ke elemen sebelumnya saat ditutup.
-function Modal({ label, className, onCancel, children }: { label: string; className: string; onCancel?: () => void; children: ReactNode }) {
+export function Modal({ label, className, onCancel, children }: { label: string; className: string; onCancel?: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     const dialog = ref.current!;
@@ -49,7 +49,17 @@ export function ColorPicker({ onPick, onCancel }: { onPick: (c: Color) => void; 
   );
 }
 
-export function EndScreen({ name, avatarUrl, onRestart }: { name: string; avatarUrl: string | null; onRestart: () => void }) {
+export function EndScreen({
+  name,
+  avatarUrl,
+  canRestart = true,
+  onRestart,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  canRestart?: boolean;
+  onRestart: () => void;
+}) {
   return (
     <Modal label="Game selesai" className={s.end}>
       {avatarUrl ? (
@@ -59,7 +69,11 @@ export function EndScreen({ name, avatarUrl, onRestart }: { name: string; avatar
         <span className={s.avatar} aria-hidden>{name[0]}</span>
       )}
       <p className={s.winner}>{name} menang!</p>
-      <button type="button" className={s.again} onClick={onRestart}>Main lagi</button>
+      {canRestart ? (
+        <button type="button" className={s.again} onClick={onRestart}>Main lagi</button>
+      ) : (
+        <p className={s.waiting}>Menunggu host…</p>
+      )}
     </Modal>
   );
 }

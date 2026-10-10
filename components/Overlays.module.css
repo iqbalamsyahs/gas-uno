@@ -78,3 +78,5 @@
 @media (prefers-reduced-motion: reduce) {
   .sheet { animation: none; }
 }
+
+.waiting { margin: 0; font-weight: 700; color: var(--accent); }

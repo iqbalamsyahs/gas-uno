@@ -1,51 +1,105 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Card from './Card';
 import Hand from './Hand';
 import { ColorPicker, EndScreen } from './Overlays';
+import { seatLayout } from '@/lib/seat-layout';
 import { COLOR_NAME, SYMBOL, playableIndexes, type Card as CardT, type Color, type PlayerView } from '@/lib/uno';
 import s from './Table.module.css';
+
+type SeatInfo = { avatarUrl: string | null; connected: boolean; botControlled: boolean };
 
 type Props = {
   view: PlayerView;
   avatarUrl: string | null;
+  seatInfo?: SeatInfo[];
+  isHost?: boolean;
   onPlay: (index: number, color?: Color) => void;
   onDraw: () => void;
   onPass: () => void;
   onRestart: () => void;
 };
 
+function initialsOf(name: string): string {
+  return name.split(' ').map((w) => w[0]).join('');
+}
+
+function Avatar({ name, avatarUrl, className }: { name: string; avatarUrl: string | null; className: string }) {
+  return avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- avatar Discord kecil, next/image tidak perlu
+    <img src={avatarUrl} alt="" className={className} />
+  ) : (
+    <span className={className} aria-hidden>{initialsOf(name)}</span>
+  );
+}
+
 function SeatChip({ name, count, active, avatarUrl = null }: { name: string; count: number; active: boolean; avatarUrl?: string | null }) {
-  const initials = name.split(' ').map((w) => w[0]).join('');
   return (
     <div className={s.chip} data-active={active} role="img" aria-label={`${name}, ${count} kartu${active ? ', sedang giliran' : ''}`}>
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- avatar Discord kecil, next/image tidak perlu
-        <img src={avatarUrl} alt="" className={s.avatar} />
-      ) : (
-        <span className={s.avatar} aria-hidden>{initials}</span>
-      )}
+      <Avatar name={name} avatarUrl={avatarUrl} className={s.avatar} />
       <span className={s.chipName} aria-hidden>{name}</span>
       <span className={s.count} aria-hidden>{count}</span>
     </div>
   );
 }
 
-export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onRestart }: Props) {
-  // pilihan Wild terikat ke tangan saat itu: kalau tangan berubah (mis. kartu lain dimainkan lewat keyboard), pemilih warna tertutup
+function OpponentSeat({ name, count, active, info, pos }: { name: string; count: number; active: boolean; info: SeatInfo; pos: { x: number; y: number } }) {
+  const status = info.botControlled ? ', dijalankan bot' : !info.connected ? ', koneksi putus' : '';
+  return (
+    <div
+      className={`${s.chip} ${s.arc}`}
+      data-active={active}
+      data-dim={!info.connected}
+      style={{ left: pos.x, top: pos.y }}
+      role="img"
+      aria-label={`${name}, ${count} kartu${active ? ', sedang giliran' : ''}${status}`}
+    >
+      <Avatar name={name} avatarUrl={info.avatarUrl} className={s.avatar} />
+      {active && <span className={s.chipName} aria-hidden>{name}</span>}
+      <span className={s.count} aria-hidden>{count}</span>
+      {info.botControlled ? (
+        <span className={s.badge} aria-hidden>🤖</span>
+      ) : !info.connected ? (
+        <span className={s.badge} aria-hidden>⟳</span>
+      ) : null}
+    </div>
+  );
+}
+
+export default function Table({ view, avatarUrl, seatInfo, isHost = true, onPlay, onDraw, onPass, onRestart }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
   const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
   const myTurn = view.turn === view.seat && view.winner === null;
   const playable = playableIndexes(view);
   const play = (i: number) => (view.hand[i].c === 'wild' ? setWildPick({ hand: view.hand, index: i }) : onPlay(i));
+
+  const info: SeatInfo[] =
+    seatInfo ?? view.names.map((_, i) => ({ avatarUrl: i === view.seat ? avatarUrl : null, connected: true, botControlled: false }));
   const opponents = view.names.map((name, seat) => ({ name, seat })).filter((o) => o.seat !== view.seat);
+
+  const oppsRef = useRef<HTMLDivElement>(null);
+  const [oppsSize, setOppsSize] = useState({ width: 336, height: 130 });
+  useEffect(() => {
+    const el = oppsRef.current!;
+    const ro = new ResizeObserver(([entry]) => setOppsSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const positions = seatLayout(opponents.length, oppsSize.width, oppsSize.height);
 
   return (
     <main className={s.table}>
-      <div className={s.opps}>
-        {opponents.map((o) => (
-          <SeatChip key={o.seat} name={o.name} count={view.counts[o.seat]} active={view.turn === o.seat && view.winner === null} />
+      <div className={s.opps} ref={oppsRef}>
+        {opponents.map((o, i) => (
+          <OpponentSeat
+            key={o.seat}
+            name={o.name}
+            count={view.counts[o.seat]}
+            active={view.turn === o.seat && view.winner === null}
+            info={info[o.seat]}
+            pos={positions[i]}
+          />
         ))}
       </div>
 
@@ -84,7 +138,12 @@ export default function Table({ view, avatarUrl, onPlay, onDraw, onPass, onResta
         />
       )}
       {view.winner !== null && (
-        <EndScreen name={view.names[view.winner]} avatarUrl={view.winner === view.seat ? avatarUrl : null} onRestart={onRestart} />
+        <EndScreen
+          name={view.names[view.winner]}
+          avatarUrl={view.winner === view.seat ? avatarUrl : null}
+          canRestart={isHost}
+          onRestart={onRestart}
+        />
       )}
     </main>
   );
