@@ -11,6 +11,33 @@
         ],
         "createdAt": "2026-10-09T12:16:39.422Z",
         "reason": "Claude: throwaway brainstorm wireframe, decision already made; 11px floor added to the real spec instead"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "D:/Ibang/Project/claude/uno/.superpowers/brainstorm/3642-1791560008/content/meja-10-pemain.html"
+        ],
+        "createdAt": "2026-10-09T15:34:14.412Z",
+        "reason": "Claude: throwaway brainstorm wireframe; phone frame clips intentionally, 11px names are the spec's floor and are part of what is being compared"
+      },
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          "D:/Ibang/Project/claude/uno/.superpowers/brainstorm/3642-1791560008/content/meja-10-pemain.html"
+        ],
+        "createdAt": "2026-10-09T15:34:14.751Z",
+        "reason": "Claude: throwaway brainstorm wireframe; phone frame clips intentionally, 11px names are the spec's floor and are part of what is being compared"
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "D:/Ibang/Project/claude/uno/.superpowers/brainstorm/3642-1791560008/content/meja-10-pemain.html"
+        ],
+        "createdAt": "2026-10-09T15:34:15.058Z",
+        "reason": "Claude: throwaway brainstorm wireframe; phone frame clips intentionally, 11px names are the spec's floor and are part of what is being compared"
       }
     ]
   }
