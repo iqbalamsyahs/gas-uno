@@ -216,6 +216,34 @@ describe('takeover setelah 60 detik', () => {
   }, 10_000);
 });
 
+describe('penonton', () => {
+  it('pemain yang masuk saat game berjalan: masuk antrean, view tanpa tangan', async () => {
+    const ws1 = await openSocket('penonton');
+    await helloDev(ws1, 'u1', 'Rina');
+    const ws2 = await openSocket('penonton');
+    const ready = nextMessage(ws1);
+    await helloDev(ws2, 'u2', 'Budi');
+    await ready;
+
+    const started = nextMessage(ws2);
+    ws1.send(JSON.stringify({ type: 'start' }));
+    await nextMessage(ws1);
+    await started;
+
+    const ws3 = await openSocket('penonton');
+    const spectator = await helloDev(ws3, 'u3', 'Caca');
+    expect(spectator.seats.map((s: any) => s.id)).toEqual(['dev-u1', 'dev-u2']);
+    expect(spectator.queue).toEqual([{ id: 'dev-u3', name: 'Caca' }]);
+    expect(spectator.view.seat).toBe(-1);
+    expect(spectator.view.hand).toEqual([]);
+    expect(spectator.view.counts).toHaveLength(2);
+
+    ws1.close();
+    ws2.close();
+    ws3.close();
+  });
+});
+
 describe('meja kosong dihapus setelah 10 menit', () => {
   const emptyRoom: Room = {
     phase: 'lobby',

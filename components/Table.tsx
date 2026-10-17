@@ -15,6 +15,7 @@ type Props = {
   avatarUrl: string | null;
   seatInfo?: SeatInfo[];
   isHost?: boolean;
+  spectator?: boolean;
   onPlay: (index: number, color?: Color) => void;
   onDraw: () => void;
   onPass: () => void;
@@ -67,7 +68,7 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
   );
 }
 
-export default function Table({ view, avatarUrl, seatInfo, isHost = true, onPlay, onDraw, onPass, onRestart }: Props) {
+export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
   const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
   const myTurn = view.turn === view.seat && view.winner === null;
@@ -121,14 +122,20 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, onPlay
         )}
       </div>
 
-      <div className={s.mine}>
-        <div className={s.me}>
-          <SeatChip name={view.names[view.seat]} count={view.hand.length} active={myTurn} avatarUrl={avatarUrl} />
-          {/* selalu dirender supaya screen reader membacakan saat isinya berubah */}
-          <p className={s.yourTurn} aria-live="polite">{myTurn ? 'Giliran kamu' : ''}</p>
+      {spectator ? (
+        <div className={s.mine}>
+          <p className={s.yourTurn}>Kamu menonton. Ikut di game berikutnya.</p>
         </div>
-        <Hand cards={view.hand} playable={playable} myTurn={myTurn} onPlay={play} />
-      </div>
+      ) : (
+        <div className={s.mine}>
+          <div className={s.me}>
+            <SeatChip name={view.names[view.seat]} count={view.hand.length} active={myTurn} avatarUrl={avatarUrl} />
+            {/* selalu dirender supaya screen reader membacakan saat isinya berubah */}
+            <p className={s.yourTurn} aria-live="polite">{myTurn ? 'Giliran kamu' : ''}</p>
+          </div>
+          <Hand cards={view.hand} playable={playable} myTurn={myTurn} onPlay={play} />
+        </div>
+      )}
 
       {wildIndex !== null && (
         <ColorPicker

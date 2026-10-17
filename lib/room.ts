@@ -212,7 +212,8 @@ export function snapshot(room: Room, userId: string): RoomMessage {
     hostId: room.hostId,
     seats: room.seats.map(({ id, name, avatarUrl, bot, connected, botControlled }) => ({ id, name, avatarUrl, bot, connected, botControlled })),
     queue: room.queue.map(({ id, name }) => ({ id, name })),
-    view: seatIdx >= 0 && room.game ? viewFor(room.game, seatIdx) : null,
+    // penonton (antrean saat game berjalan) ikut menerima view dengan seat -1: tangan kosong
+    view: room.game ? viewFor(room.game, seatIdx) : null,
     winner: room.game?.winner ?? null,
   };
 }

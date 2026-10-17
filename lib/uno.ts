@@ -181,12 +181,13 @@ export type PlayerView = {
   log: string;
 };
 
-// Bentuk data yang sama akan dikirim server ke tiap pemain di Fase 2
+// Bentuk data yang sama akan dikirim server ke tiap pemain di Fase 2.
+// seat -1 = penonton: tangan kosong, semua jumlah kartu tetap terlihat.
 export function viewFor(s: GameState, seat: number): PlayerView {
   return {
     seat,
     names: s.names,
-    hand: s.hands[seat],
+    hand: s.hands[seat] ?? [],
     counts: s.hands.map((h) => h.length),
     top: top(s),
     plays: s.plays,

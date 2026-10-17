@@ -136,6 +136,7 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
           view={room.view}
           avatarUrl={mySeat?.avatarUrl ?? null}
           isHost={room.you === room.hostId}
+          spectator={mySeat === null}
           seatInfo={room.seats.map((seat) => ({
             avatarUrl: seat.avatarUrl,
             connected: seat.connected,
@@ -146,17 +147,6 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
           onPass={() => send({ type: 'pass', v: room.v })}
           onRestart={() => send({ type: 'restart' })}
         />
-      )}
-
-      {room.phase !== 'lobby' && !room.view && (
-        <div className={gateStyles.screen}>
-          <p>Game sedang berjalan</p>
-          <ul>
-            {room.seats.map((seat) => (
-              <li key={seat.id}>{seat.name}</li>
-            ))}
-          </ul>
-        </div>
       )}
     </div>
   );

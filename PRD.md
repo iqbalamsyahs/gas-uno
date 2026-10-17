@@ -185,5 +185,5 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 4. **M4 — Fase 2 selesai**, dikerjakan dalam tiga bagian:
    - **Bagian 1, multiplayer dasar:** server Durable Object, lobby, kursi bot, meja sampai 10 pemain, tersambung ulang, bot pengganti setelah 60 detik. Desain: [spec M4 bagian 1](docs/superpowers/specs/2026-10-09-uno-m4-multiplayer-design.md).
    - **Bagian 2, ketahanan:** meja dihapus 10 menit setelah kosong. — selesai Oct 17, 2026 (`cc6ef2e`).
-   - **Bagian 3, penonton.**
+   - **Bagian 3, penonton.** — selesai Oct 17, 2026.
 5. **M5 — Fase 3:** tombol UNO, aturan rumah, animasi.

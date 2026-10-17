@@ -235,10 +235,17 @@ describe('snapshot', () => {
     expect(msg).not.toContain(JSON.stringify(r.game!.hands[1]));
   });
 
-  it('view null kalau tidak duduk', () => {
+  it('penonton (antrean saat game berjalan): seat -1, tangan kosong, jumlah kartu semua pemain terlihat', () => {
     const r = command(lobbyOf(10), 'u1', { type: 'start' });
     const full = join(r, USER('u11'), 0);
-    expect(snapshot(full, 'u11').view).toBeNull();
+    const view = snapshot(full, 'u11').view!;
+    expect(view.seat).toBe(-1);
+    expect(view.hand).toEqual([]);
+    expect(view.counts).toEqual(r.game!.hands.map((h) => h.length));
+  });
+
+  it('view null di lobby (belum ada game)', () => {
+    expect(snapshot(lobbyOf(2), 'u1').view).toBeNull();
   });
 });
 
