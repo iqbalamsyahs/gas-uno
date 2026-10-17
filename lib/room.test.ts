@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { botTurn, command, expire, join, leave, newRoom, parseClientMessage, snapshot, type Room } from './room';
+import { botTurn, command, expire, join, leave, newRoom, parseClientMessage, QUEUE_MAX, snapshot, type Room } from './room';
 
 const USER = (id: string, name = id) => ({ id, name, avatarUrl: null });
 
@@ -224,6 +224,15 @@ describe('botTurn', () => {
   it('bukan giliran bot: tidak berubah', () => {
     const r = command(lobbyOf(2), 'u1', { type: 'start' });
     expect(botTurn(r)).toBe(r);
+  });
+});
+
+describe('join: batas antrean', () => {
+  it('antrean maksimal QUEUE_MAX; pemain berikutnya ditolak tanpa mengubah room', () => {
+    let r = command(lobbyOf(10), 'u1', { type: 'start' });
+    for (let i = 11; i < 11 + QUEUE_MAX; i++) r = join(r, USER(`u${i}`), 0);
+    expect(r.queue).toHaveLength(QUEUE_MAX);
+    expect(join(r, USER('u99'), 0)).toBe(r);
   });
 });
 

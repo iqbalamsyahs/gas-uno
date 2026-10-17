@@ -22,6 +22,7 @@ export type Room = {
 export type JoiningUser = { id: string; name: string; avatarUrl: string | null };
 
 const TAKEOVER_MS = 60_000;
+export const QUEUE_MAX = 10;
 
 export function newRoom(): Room {
   return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0 };
@@ -41,6 +42,8 @@ export function join(room: Room, user: JoiningUser, _now: number): Room {
   if (room.phase === 'lobby' && room.seats.length < 10) {
     return { ...room, seats: [...room.seats, seat], hostId: room.hostId ?? seat.id, v: room.v + 1 };
   }
+  // antrean penuh: ditolak (room tidak berubah); server menutup socket-nya dengan 4004
+  if (room.queue.length >= QUEUE_MAX) return room;
   return { ...room, queue: [...room.queue, seat], v: room.v + 1 };
 }
 

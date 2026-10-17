@@ -216,6 +216,27 @@ describe('takeover setelah 60 detik', () => {
   }, 10_000);
 });
 
+describe('antrean penuh', () => {
+  it('pemain ke-11 di antrean ditutup 4004 dan tidak masuk room', async () => {
+    const stub = typedEnv.TABLE.get(typedEnv.TABLE.idFromName('antrean-penuh'));
+    const queue = Array.from({ length: 10 }, (_, i) => ({
+      id: `dev-q${i}`, name: `Q${i}`, avatarUrl: null, bot: false, connected: false, disconnectedAt: Date.now(), botControlled: false,
+    }));
+    const fullRoom: Room = { phase: 'playing', seats: [], queue, hostId: null, game: null, v: 1 };
+    await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
+      await state.storage.put('room', fullRoom);
+    });
+    const ws = await openSocket('antrean-penuh');
+    ws.send(JSON.stringify({ type: 'hello', token: 'dev:u11:Rina' }));
+    const closed = await nextClose(ws);
+    expect(closed.code).toBe(4004);
+    await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
+      const after = (await state.storage.get('room')) as Room;
+      expect(after.queue).toHaveLength(10);
+    });
+  });
+});
+
 describe('penonton', () => {
   it('pemain yang masuk saat game berjalan: masuk antrean, view tanpa tangan', async () => {
     const ws1 = await openSocket('penonton');

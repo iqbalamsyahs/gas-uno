@@ -57,6 +57,12 @@ export class Table extends DurableObject<Env> {
       }
       ws.serializeAttachment({ userId: user.id } satisfies Attachment);
       await this.apply((room) => join(room, user, Date.now()));
+      const after = await this.room();
+      if (!after.seats.some((s) => s.id === user.id) && !after.queue.some((q) => q.id === user.id)) {
+        // antrean penuh: attachment dilepas dulu supaya webSocketClose tidak menjalankan leave()
+        ws.serializeAttachment(null);
+        ws.close(4004, 'antrean penuh');
+      }
       return;
     }
 

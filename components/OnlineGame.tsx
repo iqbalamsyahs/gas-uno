@@ -37,7 +37,7 @@ function wsUrl(instanceId: string): string {
 export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props) {
   const [room, setRoom] = useState<RoomMessage | null>(null);
   const [connected, setConnected] = useState(false);
-  const [fatal, setFatal] = useState<'token' | 'instance' | 'unreachable' | null>(null);
+  const [fatal, setFatal] = useState<'token' | 'instance' | 'full' | 'unreachable' | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -64,6 +64,7 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
         setConnected(false);
         if (ev.code === 4001) return setFatal('token');
         if (ev.code === 4003) return setFatal('instance');
+        if (ev.code === 4004) return setFatal('full');
         if (ev.code === 4002) return; // digantikan tab lain: tidak reconnect otomatis
         if (!giveUpAt) giveUpAt = Date.now() + GIVE_UP_AFTER_MS;
         if (Date.now() >= giveUpAt) return setFatal('unreachable');
@@ -85,7 +86,13 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
 
   if (fatal) {
     const message =
-      fatal === 'token' ? 'Gagal masuk ke meja' : fatal === 'instance' ? 'Meja tidak ditemukan' : 'Tidak bisa menyambung ke server';
+      fatal === 'token'
+        ? 'Gagal masuk ke meja'
+        : fatal === 'instance'
+          ? 'Meja tidak ditemukan'
+          : fatal === 'full'
+            ? 'Antrean meja sudah penuh, coba lagi nanti'
+            : 'Tidak bisa menyambung ke server';
     const retry = () => {
       // token kedaluwarsa/tidak valid butuh token baru (login ulang), bukan sekadar membuka socket yang sama lagi
       if (fatal === 'token' && onTokenInvalid) {
