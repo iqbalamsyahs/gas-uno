@@ -216,6 +216,50 @@ describe('takeover setelah 60 detik', () => {
   }, 10_000);
 });
 
+describe('meja kosong dihapus setelah 10 menit', () => {
+  const emptyRoom: Room = {
+    phase: 'lobby',
+    seats: [{ id: 'dev-u1', name: 'Rina', avatarUrl: null, bot: false, connected: false, disconnectedAt: Date.now(), botControlled: false }],
+    queue: [],
+    hostId: 'dev-u1',
+    game: null,
+    v: 3,
+  };
+
+  it('mencatat emptySince saat pemain terakhir keluar', async () => {
+    const ws = await openSocket('kosong-catat');
+    await helloDev(ws, 'u1', 'Rina');
+    const before = Date.now();
+    ws.close();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const stub = typedEnv.TABLE.get(typedEnv.TABLE.idFromName('kosong-catat'));
+    await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
+      const since = await state.storage.get('emptySince');
+      expect(since).toBeGreaterThanOrEqual(before);
+    });
+  });
+
+  it('dihapus saat alarm menyala dan meja sudah kosong 10 menit', async () => {
+    const stub = typedEnv.TABLE.get(typedEnv.TABLE.idFromName('kosong-hapus'));
+    await (runInDurableObject as any)(stub, async (instance: any, state: any) => {
+      await state.storage.put('room', emptyRoom);
+      await state.storage.put('emptySince', Date.now() - 10 * 60_000 - 1);
+      await instance.alarm();
+      expect(await state.storage.get('room')).toBeUndefined();
+    });
+  });
+
+  it('belum dihapus sebelum 10 menit kosong', async () => {
+    const stub = typedEnv.TABLE.get(typedEnv.TABLE.idFromName('kosong-belum'));
+    await (runInDurableObject as any)(stub, async (instance: any, state: any) => {
+      await state.storage.put('room', emptyRoom);
+      await state.storage.put('emptySince', Date.now() - 60_000);
+      await instance.alarm();
+      expect(await state.storage.get('room')).toBeDefined();
+    });
+  });
+});
+
 describe('penjadwalan giliran bot', () => {
   it('scheduleBotTurn membersihkan timer lama sebelum menjadwalkan yang baru (tidak dobel saat event lain terjadi menjelang giliran bot)', async () => {
     const id = typedEnv.TABLE.idFromName('bot-timer-dedup');

@@ -11,7 +11,7 @@ Teman-teman di satu voice channel bisa membuka Activity, berkumpul di lobby, hos
 | Bagian | Isi | Status |
 | --- | --- | --- |
 | **1. Multiplayer dasar** | Server Durable Object, lobby (layar pertama), kursi bot, meja sampai 10 pemain, tersambung ulang, bot pengganti setelah 60 detik | **Spec ini** |
-| 2. Ketahanan | Meja dihapus 10 menit setelah kosong | Nanti |
+| 2. Ketahanan | Meja dihapus 10 menit setelah kosong | Selesai (Oct 17, 2026, `cc6ef2e`) |
 | 3. Penonton | Pemain yang telat bisa menonton game yang sedang berjalan | Nanti |
 
 **Bukan bagian 1:** penghapusan meja kosong, penonton, menu Pengaturan, aturan rumah, suara, riwayat menang.

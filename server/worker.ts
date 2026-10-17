@@ -12,6 +12,12 @@ type Attachment = { userId: string };
 
 const INSTANCE_ID_RE = /^[\w-]{1,100}$/;
 const BOT_DELAY = 900;
+const EMPTY_TABLE_MS = 10 * 60_000;
+
+// Kosong = tidak ada manusia yang tersambung dan antrean kosong (kursi bot tidak dihitung).
+function isEmpty(room: Room): boolean {
+  return room.queue.length === 0 && !room.seats.some((s) => !s.bot && s.connected);
+}
 
 export class Table extends DurableObject<Env> {
   async fetch(): Promise<Response> {
@@ -65,7 +71,13 @@ export class Table extends DurableObject<Env> {
   }
 
   async alarm() {
-    await this.apply((room) => expire(room, Date.now()));
+    const now = Date.now();
+    const emptySince = await this.ctx.storage.get<number>('emptySince');
+    if (emptySince !== undefined && now - emptySince >= EMPTY_TABLE_MS && isEmpty(await this.room())) {
+      await this.destroy();
+      return;
+    }
+    await this.apply((room) => expire(room, now));
   }
 
   private async verify(token: string): Promise<Identity | null> {
@@ -99,7 +111,29 @@ export class Table extends DurableObject<Env> {
       ws.send(JSON.stringify(snapshot(next, attachment.userId)));
     }
     this.scheduleBotTurn(next);
-    await this.scheduleExpireAlarm(next);
+    const emptySince = await this.syncEmpty(next);
+    await this.scheduleAlarm(next, emptySince);
+  }
+
+  // Mencatat kapan meja mulai kosong; kembali ke null kalau sudah ada yang masuk lagi.
+  private async syncEmpty(room: Room): Promise<number | null> {
+    const since = await this.ctx.storage.get<number>('emptySince');
+    if (!isEmpty(room)) {
+      if (since !== undefined) await this.ctx.storage.delete('emptySince');
+      return null;
+    }
+    if (since !== undefined) return since;
+    const now = Date.now();
+    await this.ctx.storage.put('emptySince', now);
+    return now;
+  }
+
+  private async destroy() {
+    if (this.botTimer !== null) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
+    await this.ctx.storage.deleteAll();
   }
 
   private botTimer: ReturnType<typeof setTimeout> | null = null;
@@ -120,10 +154,12 @@ export class Table extends DurableObject<Env> {
     }, BOT_DELAY);
   }
 
-  private async scheduleExpireAlarm(room: Room) {
-    const pending = room.seats.filter((s) => !s.connected && !s.botControlled && s.disconnectedAt !== null);
-    if (!pending.length) return;
-    await this.ctx.storage.setAlarm(Math.min(...pending.map((s) => s.disconnectedAt! + 60_000)));
+  // Satu alarm per DO: ambil yang paling awal dari takeover kursi putus dan penghapusan meja kosong.
+  private async scheduleAlarm(room: Room, emptySince: number | null) {
+    const deadlines = room.seats.filter((s) => !s.connected && !s.botControlled && s.disconnectedAt !== null).map((s) => s.disconnectedAt! + 60_000);
+    if (emptySince !== null) deadlines.push(emptySince + EMPTY_TABLE_MS);
+    if (!deadlines.length) return;
+    await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
 }
 
