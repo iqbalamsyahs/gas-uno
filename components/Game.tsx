@@ -2,14 +2,20 @@
 
 import { useEffect, useReducer } from 'react';
 import Table from './Table';
-import { apply, botAction, newGame, viewFor, type Action, type GameState } from '@/lib/uno';
+import { apply, botAction, callUno, catchUno, newGame, viewFor, type Action, type GameState } from '@/lib/uno';
 import type { User } from '@/lib/discord-user';
 
 const BOT_DELAY = 900;
 const ME = 0;
 
-type GameAction = Action | { type: 'restart' };
-const reducer = (s: GameState, a: GameAction): GameState => (a.type === 'restart' ? newGame(s.names) : apply(s, a));
+type GameAction = Action | { type: 'restart' } | { type: 'uno' } | { type: 'catch'; target: number };
+const reducer = (s: GameState, a: GameAction): GameState => {
+  if (a.type === 'restart') return newGame(s.names);
+  if (a.type === 'uno') return callUno(s, ME);
+  if (a.type === 'catch') return catchUno(s, ME, a.target);
+  const next = apply(s, a);
+  return a.seat === ME ? next : callUno(next, a.seat); // bot selalu menekan UNO sendiri
+};
 
 // Game baru dibuat di client saja: DiscordGate baru me-render Game setelah effect selesai, jadi tidak ada beda hasil SSR.
 export default function Game({ user }: { user: User }) {
@@ -29,6 +35,8 @@ export default function Game({ user }: { user: User }) {
       onDraw={() => dispatch({ type: 'draw', seat: ME })}
       onPass={() => dispatch({ type: 'pass', seat: ME })}
       onRestart={() => dispatch({ type: 'restart' })}
+      onUno={() => dispatch({ type: 'uno' })}
+      onCatch={(target) => dispatch({ type: 'catch', target })}
     />
   );
 }

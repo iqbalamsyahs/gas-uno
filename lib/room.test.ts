@@ -277,3 +277,26 @@ describe('parseClientMessage', () => {
     expect(parseClientMessage({ type: 'draw' })).toBeNull();
   });
 });
+
+describe('UNO lewat room', () => {
+  const card = (c: string, v: string) => ({ c, v }) as never;
+
+  it('penangkap diambil dari identitas; pemain yang tidak duduk tidak bisa menangkap', () => {
+    let r = command(lobbyOf(2), 'u1', { type: 'start' });
+    r = { ...r, game: { ...r.game!, hands: [[card('red', '1'), card('red', '2')], [card('blue', '5')]], discard: [card('red', '3')], turn: 0, color: 'red', drawn: false, uno: null } };
+    r = command(r, 'u1', { type: 'play', index: 0, v: r.v });
+    expect(r.game!.uno).toBe(0);
+    expect(command(r, 'u1', { type: 'catch', target: 0 })).toBe(r); // tidak menangkap diri sendiri
+    expect(command(r, 'u99', { type: 'catch', target: 0 })).toBe(r); // bukan pemain
+    const caught = command(r, 'u2', { type: 'catch', target: 0 });
+    expect(caught.game!.hands[0]).toHaveLength(3);
+  });
+
+  it('bot yang tinggal 1 kartu otomatis menekan UNO, tidak pernah tertangkap', () => {
+    let r = command(command(lobbyOf(1), 'u1', { type: 'addBot' }), 'u1', { type: 'start' });
+    r = { ...r, game: { ...r.game!, hands: [[card('red', '1')], [card('blue', '1'), card('blue', '2')]], discard: [card('blue', '3')], turn: 1, color: 'blue', drawn: false, uno: null } };
+    const after = botTurn(r);
+    expect(after.game!.hands[1]).toHaveLength(1);
+    expect(after.game!.uno).toBeNull();
+  });
+});

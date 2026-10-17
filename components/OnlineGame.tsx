@@ -153,6 +153,8 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
           onDraw={() => send({ type: 'draw', v: room.v })}
           onPass={() => send({ type: 'pass', v: room.v })}
           onRestart={() => send({ type: 'restart' })}
+          onUno={() => send({ type: 'uno' })}
+          onCatch={(target) => send({ type: 'catch', target })}
         />
       )}
     </div>

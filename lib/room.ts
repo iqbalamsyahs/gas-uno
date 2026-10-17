@@ -1,4 +1,4 @@
-import { apply, botAction, COLORS, newGame, viewFor, type Action, type Color, type GameState, type PlayerView } from './uno';
+import { apply, botAction, callUno, catchUno, COLORS, newGame, viewFor, type Action, type Color, type GameState, type PlayerView } from './uno';
 
 export type Seat = {
   id: string;
@@ -98,7 +98,9 @@ export type ClientMessage =
   | { type: 'restart' }
   | { type: 'play'; index: number; v: number; color?: Color }
   | { type: 'draw'; v: number }
-  | { type: 'pass'; v: number };
+  | { type: 'pass'; v: number }
+  | { type: 'uno' }
+  | { type: 'catch'; target: number };
 
 export type RoomCommand = Exclude<ClientMessage, { type: 'hello' }>;
 
@@ -114,7 +116,10 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     case 'removeBot':
     case 'start':
     case 'restart':
+    case 'uno':
       return { type: m.type };
+    case 'catch':
+      return typeof m.target === 'number' ? { type: 'catch', target: m.target } : null;
     case 'play':
       if (typeof m.index !== 'number' || typeof m.v !== 'number') return null;
       if (m.color !== undefined && !isColor(m.color)) return null;
@@ -179,6 +184,15 @@ export function command(room: Room, userId: string, msg: RoomCommand): Room {
     case 'draw':
     case 'pass':
       return applyGameAction(room, room.seats.findIndex((s) => s.id === userId), msg);
+    case 'uno':
+    case 'catch': {
+      if (room.phase !== 'playing' || !room.game) return room;
+      const seat = room.seats.findIndex((s) => s.id === userId);
+      if (seat < 0) return room;
+      const game = msg.type === 'uno' ? callUno(room.game, seat) : catchUno(room.game, seat, msg.target);
+      if (game === room.game) return room;
+      return { ...room, game, v: room.v + 1 };
+    }
     default:
       return room;
   }
@@ -186,10 +200,13 @@ export function command(room: Room, userId: string, msg: RoomCommand): Room {
 
 export function botTurn(room: Room): Room {
   if (room.phase !== 'playing' || !room.game || room.game.winner !== null) return room;
-  const seat = room.seats[room.game.turn];
+  const actor = room.game.turn;
+  const seat = room.seats[actor];
   if (!seat || !(seat.bot || seat.botControlled)) return room;
-  const game = apply(room.game, botAction(room.game));
+  let game = apply(room.game, botAction(room.game));
   if (game === room.game) return room;
+  // bot selalu menekan UNO sendiri, jadi tidak pernah tertangkap
+  game = callUno(game, actor);
   return { ...room, game, phase: game.winner !== null ? 'ended' : room.phase, v: room.v + 1 };
 }
 

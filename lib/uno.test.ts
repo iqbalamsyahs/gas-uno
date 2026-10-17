@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apply, botAction, canPlay, cardLabel, newGame, playableIndexes, viewFor, type Card, type GameState } from './uno';
+import { apply, botAction, callUno, canPlay, catchUno, cardLabel, newGame, playableIndexes, viewFor, type Card, type GameState } from './uno';
 
 const NAMES = ['Kamu', 'Bot 1', 'Bot 2', 'Bot 3'];
 const c = (color: Card['c'], v: string): Card => ({ c: color, v });
@@ -306,5 +306,42 @@ describe('plays (pemicu animasi kartu mendarat)', () => {
     expect(reshuffled.discard).toHaveLength(1);
     expect(reshuffled.plays).toBe(0);
     expect(viewFor(played, 0).plays).toBe(1);
+  });
+});
+
+describe('UNO: jendela tangkap', () => {
+  // dua pemain, giliran A (kursi 0) punya 2 kartu merah, atas meja merah 3
+  const table = (hand0: Card[]): GameState => ({
+    ...newGame(['A', 'B'], 1),
+    hands: [hand0, [c('blue', '5')]],
+    discard: [c('red', '3')],
+    deck: [c('green', '7'), c('green', '8'), c('green', '9')],
+    turn: 0, color: 'red', drawn: false, uno: null,
+  });
+
+  it('main sampai tinggal 1 kartu membuka jendela; aksi normal berikutnya menutupnya', () => {
+    const opened = apply(table([c('red', '1'), c('red', '2')]), { type: 'play', seat: 0, index: 0 });
+    expect(opened.uno).toBe(0);
+    expect(viewFor(opened, 1).uno).toBe(0);
+    const closed = apply(opened, { type: 'draw', seat: 1 });
+    expect(closed.uno).toBeNull();
+    expect(catchUno(closed, 0, 1)).toBe(closed); // tidak ada yang bisa ditangkap lagi
+  });
+
+  it('callUno menutup jendela dan tidak memakai giliran', () => {
+    const opened = apply(table([c('red', '1'), c('red', '2')]), { type: 'play', seat: 0, index: 0 });
+    const called = callUno(opened, 0);
+    expect(called.uno).toBeNull();
+    expect(called.turn).toBe(opened.turn);
+    expect(callUno(opened, 1)).toBe(opened); // bukan kursi yang terbuka
+  });
+
+  it('catchUno: target ambil 2 kartu; sudah UNO tidak bisa ditangkap', () => {
+    const opened = apply(table([c('red', '1'), c('red', '2')]), { type: 'play', seat: 0, index: 0 });
+    const caught = catchUno(opened, 1, 0);
+    expect(caught.hands[0]).toHaveLength(3);
+    expect(caught.uno).toBeNull();
+    expect(total(caught)).toBe(total(opened));
+    expect(catchUno(callUno(opened, 0), 1, 0)).toEqual(callUno(opened, 0));
   });
 });

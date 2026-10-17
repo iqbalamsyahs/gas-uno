@@ -20,6 +20,8 @@ type Props = {
   onDraw: () => void;
   onPass: () => void;
   onRestart: () => void;
+  onUno: () => void;
+  onCatch: (target: number) => void;
 };
 
 function initialsOf(name: string): string {
@@ -68,7 +70,7 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
   );
 }
 
-export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart }: Props) {
+export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart, onUno, onCatch }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
   const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
   const myTurn = view.turn === view.seat && view.winner === null;
@@ -119,6 +121,12 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
         <p className={s.log} aria-live="polite">{view.log}</p>
         {myTurn && view.drawn && (
           <button type="button" className={s.pass} onClick={onPass}>Lewati</button>
+        )}
+        {!spectator && view.uno === view.seat && (
+          <button type="button" className={s.pass} onClick={onUno}>UNO!</button>
+        )}
+        {!spectator && view.uno !== null && view.uno !== view.seat && (
+          <button type="button" className={s.pass} onClick={() => onCatch(view.uno!)}>Tangkap UNO</button>
         )}
       </div>
 

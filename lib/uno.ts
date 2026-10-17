@@ -15,6 +15,7 @@ export type GameState = {
   log: string;
   plays: number; // jumlah kartu yang sudah dimainkan; pemicu animasi kartu mendarat
   seed: number;
+  uno: number | null; // kursi yang tinggal 1 kartu dan belum menekan UNO; bisa ditangkap sampai aksi normal berikutnya
 };
 
 export const COLOR_NAME: Record<Color, string> = { red: 'Merah', yellow: 'Kuning', green: 'Hijau', blue: 'Biru' };
@@ -68,7 +69,7 @@ export function newGame(names: string[], seed = Date.now()): GameState {
 
   const s: GameState = {
     names, deck, discard: [], hands: names.map(() => []),
-    turn: 0, dir: 1, color: 'red', drawn: false, winner: null, log: '', plays: 0, seed: seed >>> 0,
+    turn: 0, dir: 1, color: 'red', drawn: false, winner: null, log: '', plays: 0, seed: seed >>> 0, uno: null,
   };
   shuffle(s, s.deck);
   for (let p = 0; p < names.length; p++) drawCards(s, p, 7);
@@ -101,6 +102,7 @@ export function apply(state: GameState, a: Action): GameState {
   const s = structuredClone(state);
   const hand = s.hands[a.seat];
   const name = s.names[a.seat];
+  s.uno = null; // aksi normal berikutnya menutup jendela tangkap UNO
 
   if (a.type === 'draw') {
     if (s.drawn) return state;
@@ -139,7 +141,10 @@ export function apply(state: GameState, a: Action): GameState {
     s.log = `${name} menang!`;
     return s;
   }
-  if (hand.length === 1) s.log += ' — UNO!';
+  if (hand.length === 1) {
+    s.log += ' — UNO!';
+    s.uno = a.seat;
+  }
 
   let step = 1;
   if (card.v === 'skip') step = 2;
@@ -149,6 +154,22 @@ export function apply(state: GameState, a: Action): GameState {
     step = 2;
   }
   endTurn(s, step);
+  return s;
+}
+
+// Pemain yang tinggal 1 kartu menekan UNO sendiri. Tidak memakai giliran.
+export function callUno(state: GameState, seat: number): GameState {
+  if (state.winner !== null || state.uno !== seat) return state;
+  return { ...state, uno: null, log: `${state.names[seat]} UNO!` };
+}
+
+// Penangkap (kursi lain) membuat target mengambil 2 kartu. Tidak memakai giliran.
+export function catchUno(state: GameState, catcher: number, target: number): GameState {
+  if (state.winner !== null || state.uno !== target || catcher === target || state.hands[target].length !== 1) return state;
+  const s = structuredClone(state);
+  drawCards(s, target, 2);
+  s.uno = null;
+  s.log = `${s.names[catcher]} menangkap ${s.names[target]} lupa UNO, ambil 2 kartu`;
   return s;
 }
 
@@ -179,6 +200,7 @@ export type PlayerView = {
   drawn: boolean;
   winner: number | null;
   log: string;
+  uno: number | null; // kursi yang bisa ditangkap (tinggal 1 kartu, belum UNO), atau null
 };
 
 // Bentuk data yang sama akan dikirim server ke tiap pemain di Fase 2.
@@ -196,6 +218,7 @@ export function viewFor(s: GameState, seat: number): PlayerView {
     drawn: s.drawn,
     winner: s.winner,
     log: s.log,
+    uno: s.uno,
   };
 }
 
