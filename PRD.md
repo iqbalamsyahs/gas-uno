@@ -79,7 +79,7 @@ Pekerjaan dibagi tiga fase. Setiap fase bisa dirilis dan dipakai sendiri, tanpa 
   - Ambil sampai bisa main: pemain terus mengambil kartu sampai dapat kartu yang bisa dimainkan.
   - Tidak masuk: aturan "tidak boleh menyebut warna", karena susah dipakai di permainan online.
 - Efek suara sintetis (main, ambil, UNO, menang). — selesai Oct 18, 2026, tanpa file audio.
-- Animasi kartu. — belum.
+- Animasi kartu: kartu baru masuk tangan meluncur dari atas, kartu yang dimainkan terbang ke tumpukan, dan jumlah kartu lawan yang berubah tampil sebagai angka melayang. — selesai Oct 18, 2026. Semua animasi mati kalau pengguna memilih reduce motion.
 - Riwayat menang per server Discord.
 
 **Menu sebelum meja (diminta Oct 9, 2026; dikerjakan setelah spike realtime)**
@@ -194,4 +194,4 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
    - **Bagian 1, multiplayer dasar:** server Durable Object, lobby, kursi bot, meja sampai 10 pemain, tersambung ulang, bot pengganti setelah 60 detik. Desain: [spec M4 bagian 1](docs/superpowers/specs/2026-10-09-uno-m4-multiplayer-design.md).
    - **Bagian 2, ketahanan:** meja dihapus 10 menit setelah kosong. — selesai Oct 17, 2026 (`cc6ef2e`).
    - **Bagian 3, penonton.** — selesai Oct 17, 2026. Antrean (penonton yang menunggu game berikutnya) dibatasi 10 orang; pemain ke-11 ditolak dengan pesan "Antrean meja sudah penuh".
-5. **M5 — Fase 3:** tombol UNO, aturan rumah, efek suara selesai Oct 18, 2026. Animasi kartu belum.
+5. **M5 — Fase 3:** tombol UNO, aturan rumah, efek suara, dan animasi kartu selesai Oct 18, 2026.
