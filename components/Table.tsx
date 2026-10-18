@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Card from './Card';
 import Hand from './Hand';
 import { ColorPicker, EndScreen } from './Overlays';
+import { playCue } from './sound';
+import { cuesFor } from '@/lib/cue';
 import { seatLayout } from '@/lib/seat-layout';
 import { COLOR_NAME, SYMBOL, playableIndexes, type Card as CardT, type Color, type PlayerView } from '@/lib/uno';
 import s from './Table.module.css';
@@ -72,6 +74,12 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
 
 export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart, onUno, onCatch }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
+  const prevView = useRef<PlayerView | null>(null);
+  useEffect(() => {
+    // bunyi dari perubahan tampilan, termasuk aksi pemain lain
+    for (const cue of cuesFor(prevView.current, view)) playCue(cue);
+    prevView.current = view;
+  }, [view]);
   const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
   const myTurn = view.turn === view.seat && view.winner === null;
   const playable = playableIndexes(view);

@@ -25,10 +25,7 @@ export default function Menu({ onPlay }: { onPlay: () => void }) {
         <h2 id="settings-title" className={s.heading}>Pengaturan</h2>
 
         <div className={s.row}>
-          <span className={s.label}>
-            Suara
-            <small className={s.note}>efek suara belum tersedia</small>
-          </span>
+          <span className={s.label}>Suara</span>
           <button
             type="button"
             className={s.option}
