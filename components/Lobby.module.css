@@ -71,6 +71,10 @@
 
 .start { background: var(--accent); color: var(--ink-dark); }
 
+.speed { display: flex; gap: 6px; }
+
+.speed button[aria-pressed='true'] { background: var(--accent); color: var(--ink-dark); }
+
 .waiting { margin: 0; font-weight: 700; color: var(--accent); text-align: center; }
 
 .queueNote { margin: 0; font-size: 12px; opacity: 0.8; text-align: center; }

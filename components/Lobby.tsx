@@ -1,19 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from './Overlays';
+import Rules from './Rules';
+import { BOT_DELAY_MS, type BotSpeed } from '@/lib/room';
 import s from './Lobby.module.css';
 
 export type LobbySeat = { id: string; name: string; avatarUrl: string | null; bot: boolean; connected: boolean };
 export type LobbyQueueEntry = { id: string; name: string };
+
+const SPEED_LABEL: Record<BotSpeed, string> = { slow: 'Lambat', normal: 'Normal', fast: 'Cepat' };
 
 type Props = {
   seats: LobbySeat[];
   queue: LobbyQueueEntry[];
   hostId: string | null;
   you: string;
+  botSpeed: BotSpeed;
   onAddBot: () => void;
   onRemoveBot: () => void;
+  onBotSpeed: (speed: BotSpeed) => void;
   onStart: () => void;
 };
 
@@ -21,7 +26,7 @@ function initialsOf(name: string): string {
   return name.split(' ').map((w) => w[0]).join('');
 }
 
-export default function Lobby({ seats, queue, hostId, you, onAddBot, onRemoveBot, onStart }: Props) {
+export default function Lobby({ seats, queue, hostId, you, botSpeed, onAddBot, onRemoveBot, onBotSpeed, onStart }: Props) {
   const [showRules, setShowRules] = useState(false);
   const isHost = you === hostId;
   const youSeated = seats.some((seat) => seat.id === you);
@@ -54,6 +59,18 @@ export default function Lobby({ seats, queue, hostId, you, onAddBot, onRemoveBot
         <div className={s.hostControls}>
           <button type="button" onClick={onAddBot} disabled={total >= 10}>+ Bot</button>
           {hasBot && <button type="button" onClick={onRemoveBot}>− Bot</button>}
+          <div className={s.speed} role="group" aria-label="Kecepatan bot">
+            {(Object.keys(BOT_DELAY_MS) as BotSpeed[]).map((speed) => (
+              <button
+                key={speed}
+                type="button"
+                aria-pressed={botSpeed === speed}
+                onClick={() => onBotSpeed(speed)}
+              >
+                {SPEED_LABEL[speed]}
+              </button>
+            ))}
+          </div>
           <button type="button" className={s.start} onClick={onStart} disabled={!canStart}>Mulai</button>
         </div>
       ) : youSeated ? (
@@ -66,19 +83,7 @@ export default function Lobby({ seats, queue, hostId, you, onAddBot, onRemoveBot
         <p className={s.queueNote}>{queue.length} orang menunggu kursi kosong</p>
       )}
 
-      {showRules && (
-        <Modal label="Cara bermain" className={s.rulesSheet} onCancel={() => setShowRules(false)}>
-          <p className={s.title}>Cara bermain</p>
-          <ul className={s.rulesList}>
-            <li>Mainkan kartu yang warnanya atau angkanya sama dengan kartu teratas, atau kartu Wild.</li>
-            <li>Tidak ada kartu yang cocok? Ambil 1 kartu dari deck.</li>
-            <li>Skip melewati giliran berikutnya, Reverse membalik arah.</li>
-            <li>+2 dan +4 membuat pemain berikutnya mengambil kartu dan kehilangan giliran.</li>
-            <li>Pemain pertama yang kartunya habis menang.</li>
-          </ul>
-          <button type="button" className={s.cancel} onClick={() => setShowRules(false)}>Tutup</button>
-        </Modal>
-      )}
+      {showRules && <Rules onClose={() => setShowRules(false)} />}
     </main>
   );
 }

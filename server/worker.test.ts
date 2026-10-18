@@ -190,6 +190,7 @@ describe('takeover setelah 60 detik', () => {
       hostId: 'dev-u1',
       game: { ...game, turn: 0 }, // giliran Rina (kursi yang akan diambil alih bot)
       v: 5,
+      botSpeed: 'normal',
     };
 
     // alarm() adalah metode publik yang sama yang dipanggil runtime Cloudflare sungguhan saat alarm
@@ -222,7 +223,7 @@ describe('antrean penuh', () => {
     const queue = Array.from({ length: 10 }, (_, i) => ({
       id: `dev-q${i}`, name: `Q${i}`, avatarUrl: null, bot: false, connected: false, disconnectedAt: Date.now(), botControlled: false,
     }));
-    const fullRoom: Room = { phase: 'playing', seats: [], queue, hostId: null, game: null, v: 1 };
+    const fullRoom: Room = { phase: 'playing', seats: [], queue, hostId: null, game: null, v: 1, botSpeed: 'normal' };
     await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
       await state.storage.put('room', fullRoom);
     });
@@ -273,6 +274,7 @@ describe('meja kosong dihapus setelah 10 menit', () => {
     hostId: 'dev-u1',
     game: null,
     v: 3,
+    botSpeed: 'normal',
   };
 
   it('mencatat emptySince saat pemain terakhir keluar', async () => {
@@ -320,6 +322,7 @@ describe('penjadwalan giliran bot', () => {
       hostId: null,
       game: { turn: 0, winner: null },
       v: 1,
+      botSpeed: 'normal',
     };
     await (runInDurableObject as any)(stub, (instance: any) => {
       const origSetTimeout = globalThis.setTimeout;

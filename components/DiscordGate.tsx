@@ -5,6 +5,7 @@ import type { DiscordSDK } from '@discord/embedded-app-sdk';
 import { MOCK_USER, displayUser, type User } from '@/lib/discord-user';
 import Card from './Card';
 import Game from './Game';
+import Menu from './Menu';
 import OnlineGame from './OnlineGame';
 import s from './DiscordGate.module.css';
 
@@ -54,6 +55,7 @@ function connectOnce(): Promise<Session> {
 export default function DiscordGate() {
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
     // Di browser biasa tidak ada frame_id: pakai mock user
@@ -76,6 +78,7 @@ export default function DiscordGate() {
 
   if (status.kind === 'ready') {
     const { session } = status;
+    if (!started) return <Menu onPlay={() => setStarted(true)} />;
     if (session.instanceId && session.accessToken) {
       return (
         <OnlineGame

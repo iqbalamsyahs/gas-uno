@@ -10,6 +10,9 @@ export type Seat = {
   botControlled: boolean;
 };
 
+export type BotSpeed = 'slow' | 'normal' | 'fast';
+export const BOT_DELAY_MS: Record<BotSpeed, number> = { slow: 1500, normal: 900, fast: 450 };
+
 export type Room = {
   phase: 'lobby' | 'playing' | 'ended';
   seats: Seat[];
@@ -17,6 +20,7 @@ export type Room = {
   hostId: string | null;
   game: GameState | null;
   v: number;
+  botSpeed: BotSpeed; // diatur host; dipakai server untuk jeda giliran bot
 };
 
 export type JoiningUser = { id: string; name: string; avatarUrl: string | null };
@@ -25,7 +29,7 @@ const TAKEOVER_MS = 60_000;
 export const QUEUE_MAX = 10;
 
 export function newRoom(): Room {
-  return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0 };
+  return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal' };
 }
 
 // now: belum dipakai (rejoin tidak butuh waktu saat ini), dipertahankan supaya tanda tangan konsisten dengan leave/expire
@@ -100,7 +104,8 @@ export type ClientMessage =
   | { type: 'draw'; v: number }
   | { type: 'pass'; v: number }
   | { type: 'uno' }
-  | { type: 'catch'; target: number };
+  | { type: 'catch'; target: number }
+  | { type: 'setBotSpeed'; speed: BotSpeed };
 
 export type RoomCommand = Exclude<ClientMessage, { type: 'hello' }>;
 
@@ -120,6 +125,8 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
       return { type: m.type };
     case 'catch':
       return typeof m.target === 'number' ? { type: 'catch', target: m.target } : null;
+    case 'setBotSpeed':
+      return typeof m.speed === 'string' && m.speed in BOT_DELAY_MS ? { type: 'setBotSpeed', speed: m.speed as BotSpeed } : null;
     case 'play':
       if (typeof m.index !== 'number' || typeof m.v !== 'number') return null;
       if (m.color !== undefined && !isColor(m.color)) return null;
@@ -184,6 +191,10 @@ export function command(room: Room, userId: string, msg: RoomCommand): Room {
     case 'draw':
     case 'pass':
       return applyGameAction(room, room.seats.findIndex((s) => s.id === userId), msg);
+    case 'setBotSpeed': {
+      if (userId !== room.hostId || room.phase !== 'lobby' || room.botSpeed === msg.speed) return room;
+      return { ...room, botSpeed: msg.speed, v: room.v + 1 };
+    }
     case 'uno':
     case 'catch': {
       if (room.phase !== 'playing' || !room.game) return room;
@@ -220,6 +231,7 @@ export type RoomMessage = {
   queue: { id: string; name: string }[];
   view: PlayerView | null;
   winner: number | null;
+  botSpeed: BotSpeed;
 };
 
 export function snapshot(room: Room, userId: string): RoomMessage {
@@ -235,5 +247,6 @@ export function snapshot(room: Room, userId: string): RoomMessage {
     // penonton (antrean saat game berjalan) ikut menerima view dengan seat -1: tangan kosong
     view: room.game ? viewFor(room.game, seatIdx) : null,
     winner: room.game?.winner ?? null,
+    botSpeed: room.botSpeed,
   };
 }

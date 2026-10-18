@@ -5,7 +5,7 @@ const USER = (id: string, name = id) => ({ id, name, avatarUrl: null });
 
 describe('newRoom', () => {
   it('lobby kosong tanpa host', () => {
-    expect(newRoom()).toEqual({ phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0 });
+    expect(newRoom()).toEqual({ phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal' });
   });
 });
 
@@ -298,5 +298,22 @@ describe('UNO lewat room', () => {
     const after = botTurn(r);
     expect(after.game!.hands[1]).toHaveLength(1);
     expect(after.game!.uno).toBeNull();
+  });
+});
+
+describe('setBotSpeed', () => {
+  it('hanya host, hanya di lobi; nilai terbaru ikut snapshot', () => {
+    const r = lobbyOf(2);
+    expect(command(r, 'u2', { type: 'setBotSpeed', speed: 'fast' })).toBe(r); // bukan host
+    const fast = command(r, 'u1', { type: 'setBotSpeed', speed: 'fast' });
+    expect(fast.botSpeed).toBe('fast');
+    expect(snapshot(fast, 'u2').botSpeed).toBe('fast');
+    const started = command(fast, 'u1', { type: 'start' });
+    expect(command(started, 'u1', { type: 'setBotSpeed', speed: 'slow' })).toBe(started); // sudah main
+  });
+
+  it('nilai tidak sah ditolak saat parse', () => {
+    expect(parseClientMessage({ type: 'setBotSpeed', speed: 'kilat' })).toBeNull();
+    expect(parseClientMessage({ type: 'setBotSpeed', speed: 'slow' })).toEqual({ type: 'setBotSpeed', speed: 'slow' });
   });
 });

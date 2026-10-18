@@ -7,6 +7,7 @@ import Table from './Table';
 import gateStyles from './DiscordGate.module.css';
 import s from './OnlineGame.module.css';
 import type { PlayerView } from '@/lib/uno';
+import type { BotSpeed } from '@/lib/room';
 
 type Seat = LobbySeat & { botControlled: boolean };
 
@@ -20,6 +21,7 @@ type RoomMessage = {
   queue: LobbyQueueEntry[];
   view: PlayerView | null;
   winner: number | null;
+  botSpeed: BotSpeed;
 };
 
 type Props = { token: string; instanceId: string; onTokenInvalid?: () => void };
@@ -135,6 +137,8 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
           onAddBot={() => send({ type: 'addBot' })}
           onRemoveBot={() => send({ type: 'removeBot' })}
           onStart={() => send({ type: 'start' })}
+          botSpeed={room.botSpeed}
+          onBotSpeed={(speed) => send({ type: 'setBotSpeed', speed })}
         />
       )}
 

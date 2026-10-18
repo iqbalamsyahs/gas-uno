@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { displayUser, type DiscordUser } from '../lib/discord-user';
-import { botTurn, command, expire, join, leave, newRoom, parseClientMessage, snapshot, type Room } from '../lib/room';
+import { BOT_DELAY_MS, botTurn, command, expire, join, leave, newRoom, parseClientMessage, snapshot, type Room } from '../lib/room';
 
 export interface Env {
   TABLE: DurableObjectNamespace<Table>;
@@ -11,7 +11,6 @@ type Identity = { id: string; name: string; avatarUrl: string | null };
 type Attachment = { userId: string };
 
 const INSTANCE_ID_RE = /^[\w-]{1,100}$/;
-const BOT_DELAY = 900;
 const EMPTY_TABLE_MS = 10 * 60_000;
 
 // Kosong = tidak ada manusia yang tersambung dan antrean kosong (kursi bot tidak dihitung).
@@ -157,7 +156,7 @@ export class Table extends DurableObject<Env> {
     this.botTimer = setTimeout(() => {
       this.botTimer = null;
       this.apply((r) => botTurn(r)).catch(() => {});
-    }, BOT_DELAY);
+    }, BOT_DELAY_MS[room.botSpeed]);
   }
 
   // Satu alarm per DO: ambil yang paling awal dari takeover kursi putus dan penghapusan meja kosong.

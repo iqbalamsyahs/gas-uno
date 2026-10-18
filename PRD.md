@@ -76,7 +76,7 @@ Pekerjaan dibagi tiga fase. Setiap fase bisa dirilis dan dipakai sendiri, tanpa 
 
 **Menu sebelum meja (diminta Oct 9, 2026; dikerjakan setelah spike realtime)**
 
-- Layar menu sebelum masuk meja. Isinya belum diputuskan; kandidat: layar judul dengan tombol Main, cara bermain/aturan, pengaturan (kecepatan bot, suara, aturan rumah), pilih mode (lawan bot atau bersama teman di channel).
+- Layar menu sebelum masuk meja — selesai Oct 18, 2026. Isinya: judul dengan tombol Main, tautan Cara bermain, dan pengaturan suara (efek suara belum ada) serta aturan rumah (segera hadir, menunggu M5). Kecepatan bot bukan di menu, melainkan pengaturan per meja yang diatur host di lobi (Lambat/Normal/Cepat), karena server yang menjalankan giliran bot. Pilih mode (lawan bot atau bersama teman) belum masuk.
 - Dirancang bersama lobby Fase 2, supaya tidak dirombak saat multiplayer datang.
 - Tetap menjaga target < 30 detik dari membuka Activity sampai kartu pertama: mulai main cukup satu ketukan.
 
