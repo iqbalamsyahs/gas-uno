@@ -98,8 +98,31 @@
 
 .me { display: flex; align-items: center; gap: 10px; min-height: 36px; }
 
+/* selisih kartu lawan: naik untuk ambil (tidak jelas bagus/jelek, jadi netral), turun untuk main */
+.delta {
+  position: absolute;
+  right: 4px;
+  top: -4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink-dark);
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+  animation: floatUp 0.9s ease-out forwards;
+}
+
+.delta[data-up='true'] { background: #fff; }
+
+@keyframes floatUp {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-22px); opacity: 0; }
+}
+
 .yourTurn { margin: 0; min-width: 6em; font-size: 12px; font-weight: 700; color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   .chip[data-active='true'], .played { animation: none; }
+  .delta { display: none; }
 }

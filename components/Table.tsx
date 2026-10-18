@@ -51,7 +51,9 @@ function SeatChip({ name, count, active, avatarUrl = null }: { name: string; cou
   );
 }
 
-function OpponentSeat({ name, count, active, info, pos }: { name: string; count: number; active: boolean; info: SeatInfo; pos: { x: number; y: number } }) {
+type Change = { by: number; id: number }; // selisih jumlah kartu sejak tampilan sebelumnya; id berubah = animasi ulang
+
+function OpponentSeat({ name, count, active, info, pos, change }: { name: string; count: number; active: boolean; info: SeatInfo; pos: { x: number; y: number }; change?: Change }) {
   const status = info.botControlled ? ', dijalankan bot' : !info.connected ? ', koneksi putus' : '';
   return (
     <div
@@ -65,6 +67,11 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
       <Avatar name={name} avatarUrl={info.avatarUrl} className={s.avatar} />
       {active && <span className={s.chipName} aria-hidden>{name}</span>}
       <span className={s.count} aria-hidden>{count}</span>
+      {change && (
+        <span key={change.id} className={s.delta} data-up={change.by > 0} aria-hidden>
+          {change.by > 0 ? `+${change.by}` : change.by}
+        </span>
+      )}
       {info.botControlled ? (
         <span className={s.badge} aria-hidden>🤖</span>
       ) : !info.connected ? (
@@ -77,9 +84,20 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
 export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart, onUno, onCatch, onSetRules }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
   const prevView = useRef<PlayerView | null>(null);
+  const [changes, setChanges] = useState<Record<number, Change>>({});
+  const changeId = useRef(0);
   useEffect(() => {
     // bunyi dari perubahan tampilan, termasuk aksi pemain lain
-    for (const cue of cuesFor(prevView.current, view)) playCue(cue);
+    const prev = prevView.current;
+    for (const cue of cuesFor(prev, view)) playCue(cue);
+    // jumlah kartu lawan yang berubah (main, ambil, penalti) ditampilkan sebagai angka melayang
+    if (prev && prev.counts.length === view.counts.length) {
+      const next: Record<number, Change> = {};
+      view.counts.forEach((c, seat) => {
+        if (seat !== view.seat && c !== prev.counts[seat]) next[seat] = { by: c - prev.counts[seat], id: ++changeId.current };
+      });
+      if (Object.keys(next).length) setChanges((cur) => ({ ...cur, ...next }));
+    }
     prevView.current = view;
   }, [view]);
   const wildIndex = wildPick?.hand === view.hand ? wildPick.index : null;
@@ -137,6 +155,7 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
             active={view.turn === o.seat && view.winner === null}
             info={info[o.seat]}
             pos={positions[i]}
+            change={changes[o.seat]}
           />
         ))}
       </div>

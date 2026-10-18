@@ -61,6 +61,7 @@ export default function Hand({ cards, playable, myTurn, onPlay, picked = [], onT
             return (
               <Card
                 key={i}
+                className={s.deal}
                 card={card}
                 playable={playable[i]}
                 dim={myTurn && !playable[i]}
