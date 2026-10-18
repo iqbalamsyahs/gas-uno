@@ -8,6 +8,7 @@ import gateStyles from './DiscordGate.module.css';
 import s from './OnlineGame.module.css';
 import type { PlayerView } from '@/lib/uno';
 import type { BotSpeed } from '@/lib/room';
+import type { HouseRules } from '@/lib/uno';
 
 type Seat = LobbySeat & { botControlled: boolean };
 
@@ -22,6 +23,7 @@ type RoomMessage = {
   view: PlayerView | null;
   winner: number | null;
   botSpeed: BotSpeed;
+  rules: HouseRules;
 };
 
 type Props = { token: string; instanceId: string; onTokenInvalid?: () => void };
@@ -138,6 +140,8 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
           onRemoveBot={() => send({ type: 'removeBot' })}
           onStart={() => send({ type: 'start' })}
           botSpeed={room.botSpeed}
+          rules={room.rules}
+          onRules={(rules) => send({ type: 'setRules', rules })}
           onBotSpeed={(speed) => send({ type: 'setBotSpeed', speed })}
         />
       )}
@@ -153,12 +157,13 @@ export default function OnlineGame({ token, instanceId, onTokenInvalid }: Props)
             connected: seat.connected,
             botControlled: seat.botControlled,
           }))}
-          onPlay={(index, color) => send({ type: 'play', index, color, v: room.v })}
+          onPlay={(index, color, more) => send({ type: 'play', index, color, more, v: room.v })}
           onDraw={() => send({ type: 'draw', v: room.v })}
           onPass={() => send({ type: 'pass', v: room.v })}
           onRestart={() => send({ type: 'restart' })}
           onUno={() => send({ type: 'uno' })}
           onCatch={(target) => send({ type: 'catch', target })}
+          onSetRules={(rules) => send({ type: 'setRules', rules })}
         />
       )}
     </div>

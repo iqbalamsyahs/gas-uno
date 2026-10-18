@@ -144,7 +144,7 @@ describe('apply: main kartu', () => {
     expect(s.color).toBe('blue');
     expect(s.hands[1]).toHaveLength(5);
     expect(s.turn).toBe(2);
-    expect(s.log).toBe('Kamu main Wild +4 → Biru');
+    expect(s.log).toMatch(/^Kamu main Wild \+4 → Biru/); // tanpa stack/defense penalti langsung jatuh
   });
 
   it('Wild tanpa warna atau dengan warna tidak sah ditolak', () => {

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Rules from './Rules';
+import RulesPanel from './RulesPanel';
+import type { HouseRules } from '@/lib/uno';
 import { BOT_DELAY_MS, type BotSpeed } from '@/lib/room';
 import s from './Lobby.module.css';
 
@@ -19,6 +21,8 @@ type Props = {
   onAddBot: () => void;
   onRemoveBot: () => void;
   onBotSpeed: (speed: BotSpeed) => void;
+  rules: HouseRules;
+  onRules: (rules: HouseRules) => void;
   onStart: () => void;
 };
 
@@ -26,7 +30,7 @@ function initialsOf(name: string): string {
   return name.split(' ').map((w) => w[0]).join('');
 }
 
-export default function Lobby({ seats, queue, hostId, you, botSpeed, onAddBot, onRemoveBot, onBotSpeed, onStart }: Props) {
+export default function Lobby({ seats, queue, hostId, you, botSpeed, onAddBot, onRemoveBot, onBotSpeed, rules, onRules, onStart }: Props) {
   const [showRules, setShowRules] = useState(false);
   const isHost = you === hostId;
   const youSeated = seats.some((seat) => seat.id === you);
@@ -78,6 +82,11 @@ export default function Lobby({ seats, queue, hostId, you, botSpeed, onAddBot, o
       ) : (
         <p className={s.waiting}>Meja penuh, kamu masuk antrean</p>
       )}
+
+      <section className={s.rulesSection} aria-label="Aturan rumah">
+        <p className={s.rulesHead}>Aturan rumah{isHost ? '' : ' (diatur host)'}</p>
+        <RulesPanel rules={rules} onChange={isHost ? onRules : undefined} />
+      </section>
 
       {queue.length > 0 && (
         <p className={s.queueNote}>{queue.length} orang menunggu kursi kosong</p>

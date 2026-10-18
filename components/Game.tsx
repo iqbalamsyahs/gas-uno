@@ -31,7 +31,7 @@ export default function Game({ user }: { user: User }) {
     <Table
       view={viewFor(state, ME)}
       avatarUrl={user.avatarUrl}
-      onPlay={(index, color) => dispatch({ type: 'play', seat: ME, index, color })}
+      onPlay={(index, color, more) => dispatch({ type: 'play', seat: ME, index, color, more })}
       onDraw={() => dispatch({ type: 'draw', seat: ME })}
       onPass={() => dispatch({ type: 'pass', seat: ME })}
       onRestart={() => dispatch({ type: 'restart' })}

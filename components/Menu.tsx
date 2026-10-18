@@ -39,9 +39,8 @@ export default function Menu({ onPlay }: { onPlay: () => void }) {
         <div className={s.row}>
           <span className={s.label}>
             Aturan rumah
-            <small className={s.note}>segera hadir</small>
+            <small className={s.note}>diatur host di lobi</small>
           </span>
-          <button type="button" className={s.option} disabled>Mati</button>
         </div>
       </section>
 

@@ -69,14 +69,22 @@ Pekerjaan dibagi tiga fase. Setiap fase bisa dirilis dan dipakai sendiri, tanpa 
 
 **Fase 3 — Tambahan**
 
-- Tombol UNO beserta penaltinya (ambil 2 kartu kalau ketahuan lupa).
-- Opsi aturan rumah: menumpuk +2/+4, menantang Wild +4.
-- Animasi kartu dan efek suara.
+- Tombol UNO beserta penaltinya (ambil 2 kartu kalau ketahuan lupa). — selesai Oct 18, 2026.
+- Aturan rumah, diatur host per meja di lobi atau dari layar akhir game (pemain lain hanya melihat). Perubahan berlaku untuk game berikutnya. — selesai Oct 18, 2026. Pilihannya:
+  - Pilih banyak: beberapa kartu angka yang sama dimainkan sekaligus, warna boleh beda. Kartu pertama harus cocok dengan kartu teratas.
+  - Kartu 0: semua tangan berputar searah giliran.
+  - Lanjut sampai tinggal satu: pemain yang habis kartunya keluar, permainan terus sampai tinggal satu pemain yang masih punya kartu, dan dia kalah. Tidak ada poin.
+  - Tumpuk +2/+4: penalti boleh dibalas dengan +2 atau +4 dan menumpuk.
+  - Pertahanan: Skip membatalkan penalti, Reverse mengembalikannya ke pemberi.
+  - Ambil sampai bisa main: pemain terus mengambil kartu sampai dapat kartu yang bisa dimainkan.
+  - Tidak masuk: aturan "tidak boleh menyebut warna", karena susah dipakai di permainan online.
+- Efek suara sintetis (main, ambil, UNO, menang). — selesai Oct 18, 2026, tanpa file audio.
+- Animasi kartu. — belum.
 - Riwayat menang per server Discord.
 
 **Menu sebelum meja (diminta Oct 9, 2026; dikerjakan setelah spike realtime)**
 
-- Layar menu sebelum masuk meja — selesai Oct 18, 2026. Isinya: judul dengan tombol Main, tautan Cara bermain, dan pengaturan suara (efek suara belum ada) serta aturan rumah (segera hadir, menunggu M5). Kecepatan bot bukan di menu, melainkan pengaturan per meja yang diatur host di lobi (Lambat/Normal/Cepat), karena server yang menjalankan giliran bot. Pilih mode (lawan bot atau bersama teman) belum masuk.
+- Layar menu sebelum masuk meja — selesai Oct 18, 2026. Isinya: judul dengan tombol Main, tautan Cara bermain, dan pengaturan suara serta penanda bahwa aturan rumah diatur host di lobi. Kecepatan bot bukan di menu, melainkan pengaturan per meja yang diatur host di lobi (Lambat/Normal/Cepat), karena server yang menjalankan giliran bot. Pilih mode (lawan bot atau bersama teman) belum masuk.
 - Dirancang bersama lobby Fase 2, supaya tidak dirombak saat multiplayer datang.
 - Tetap menjaga target < 30 detik dari membuka Activity sampai kartu pertama: mulai main cukup satu ketukan.
 
@@ -175,7 +183,7 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
 - [x] Server realtime: Cloudflare Durable Objects (keputusan spike M3).
 - [ ] Apakah Activity juga perlu bisa dimainkan di DM dan text channel, atau cukup di voice channel?
 - [x] Maksimal pemain: sampai 10 (diputuskan Oct 9, 2026). Dampak yang harus ditangani di M4: tata letak lawan di HP untuk 9 lawan, aturan kursi bot (sekarang "maksimal 4 kursi"), dan target durasi < 10 menit untuk meja penuh.
-- [ ] Aturan rumah mana yang paling diinginkan untuk Fase 3?
+- [x] Aturan rumah mana yang paling diinginkan untuk Fase 3? Dijawab Oct 18, 2026: pilih banyak, kartu 0 putar tangan, lanjut sampai tinggal satu, tumpuk, pertahanan Skip/Reverse, dan ambil sampai bisa main (lihat Fase 3).
 
 **Milestone (berurutan; tanggal menyusul)**
 
@@ -186,4 +194,4 @@ Risiko terbesar ada di Fase 2: WebSocket harus bisa lewat proxy Discord, dan ser
    - **Bagian 1, multiplayer dasar:** server Durable Object, lobby, kursi bot, meja sampai 10 pemain, tersambung ulang, bot pengganti setelah 60 detik. Desain: [spec M4 bagian 1](docs/superpowers/specs/2026-10-09-uno-m4-multiplayer-design.md).
    - **Bagian 2, ketahanan:** meja dihapus 10 menit setelah kosong. — selesai Oct 17, 2026 (`cc6ef2e`).
    - **Bagian 3, penonton.** — selesai Oct 17, 2026. Antrean (penonton yang menunggu game berikutnya) dibatasi 10 orang; pemain ke-11 ditolak dengan pesan "Antrean meja sudah penuh".
-5. **M5 — Fase 3:** tombol UNO, aturan rumah, animasi.
+5. **M5 — Fase 3:** tombol UNO, aturan rumah, efek suara selesai Oct 18, 2026. Animasi kartu belum.

@@ -79,6 +79,10 @@
 
 .queueNote { margin: 0; font-size: 12px; opacity: 0.8; text-align: center; }
 
+.rulesSection { width: 100%; display: grid; gap: 8px; }
+
+.rulesHead { margin: 0; font-weight: 700; }
+
 .rulesSheet {
   border: 0;
   color: var(--ink);

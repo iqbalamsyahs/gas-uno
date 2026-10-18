@@ -52,13 +52,17 @@ export function ColorPicker({ onPick, onCancel }: { onPick: (c: Color) => void; 
 export function EndScreen({
   name,
   avatarUrl,
+  loserName = null,
   canRestart = true,
   onRestart,
+  onRules,
 }: {
   name: string;
   avatarUrl: string | null;
+  loserName?: string | null; // mode lanjut: pemain terakhir yang masih punya kartu
   canRestart?: boolean;
   onRestart: () => void;
+  onRules?: () => void; // hanya host yang mendapat tombol ini
 }) {
   return (
     <Modal label="Game selesai" className={s.end}>
@@ -68,7 +72,15 @@ export function EndScreen({
       ) : (
         <span className={s.avatar} aria-hidden>{name[0]}</span>
       )}
-      <p className={s.winner}>{name} menang!</p>
+      {loserName ? (
+        <>
+          <p className={s.winner}>{loserName} kalah!</p>
+          <p className={s.waiting}>{name} habis kartunya duluan</p>
+        </>
+      ) : (
+        <p className={s.winner}>{name} menang!</p>
+      )}
+      {onRules && <button type="button" className={s.cancel} onClick={onRules}>Aturan rumah</button>}
       {canRestart ? (
         <button type="button" className={s.again} onClick={onRestart}>Main lagi</button>
       ) : (

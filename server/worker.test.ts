@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 // It's marked deprecated there in favor of `cloudflare:workers`'s `exports.default.fetch(req, env, ctx)`,
 // but that needs manually building `env`/`ExecutionContext` — SELF is simplest for this request/response test.
 import { env, runInDurableObject, SELF } from 'cloudflare:test';
-import { newGame } from '../lib/uno';
+import { DEFAULT_RULES, newGame } from '../lib/uno';
 import type { Room } from '../lib/room';
 import type { Env } from './worker';
 
@@ -191,6 +191,7 @@ describe('takeover setelah 60 detik', () => {
       game: { ...game, turn: 0 }, // giliran Rina (kursi yang akan diambil alih bot)
       v: 5,
       botSpeed: 'normal',
+      rules: DEFAULT_RULES,
     };
 
     // alarm() adalah metode publik yang sama yang dipanggil runtime Cloudflare sungguhan saat alarm
@@ -223,7 +224,7 @@ describe('antrean penuh', () => {
     const queue = Array.from({ length: 10 }, (_, i) => ({
       id: `dev-q${i}`, name: `Q${i}`, avatarUrl: null, bot: false, connected: false, disconnectedAt: Date.now(), botControlled: false,
     }));
-    const fullRoom: Room = { phase: 'playing', seats: [], queue, hostId: null, game: null, v: 1, botSpeed: 'normal' };
+    const fullRoom: Room = { phase: 'playing', seats: [], queue, hostId: null, game: null, v: 1, botSpeed: 'normal', rules: DEFAULT_RULES };
     await (runInDurableObject as any)(stub, async (_instance: any, state: any) => {
       await state.storage.put('room', fullRoom);
     });
@@ -275,6 +276,7 @@ describe('meja kosong dihapus setelah 10 menit', () => {
     game: null,
     v: 3,
     botSpeed: 'normal',
+    rules: DEFAULT_RULES,
   };
 
   it('mencatat emptySince saat pemain terakhir keluar', async () => {
@@ -323,6 +325,7 @@ describe('penjadwalan giliran bot', () => {
       game: { turn: 0, winner: null },
       v: 1,
       botSpeed: 'normal',
+      rules: DEFAULT_RULES,
     };
     await (runInDurableObject as any)(stub, (instance: any) => {
       const origSetTimeout = globalThis.setTimeout;

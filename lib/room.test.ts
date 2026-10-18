@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RULES } from './uno';
 import { botTurn, command, expire, join, leave, newRoom, parseClientMessage, QUEUE_MAX, snapshot, type Room } from './room';
 
 const USER = (id: string, name = id) => ({ id, name, avatarUrl: null });
 
 describe('newRoom', () => {
   it('lobby kosong tanpa host', () => {
-    expect(newRoom()).toEqual({ phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal' });
+    expect(newRoom()).toEqual({ phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal', rules: DEFAULT_RULES });
   });
 });
 
@@ -315,5 +316,24 @@ describe('setBotSpeed', () => {
   it('nilai tidak sah ditolak saat parse', () => {
     expect(parseClientMessage({ type: 'setBotSpeed', speed: 'kilat' })).toBeNull();
     expect(parseClientMessage({ type: 'setBotSpeed', speed: 'slow' })).toEqual({ type: 'setBotSpeed', speed: 'slow' });
+  });
+});
+
+describe('aturan rumah lewat room', () => {
+  it('hanya host, tidak saat game berjalan; berlaku untuk game berikutnya', () => {
+    const r = lobbyOf(2);
+    const on = { multi: true, seven0: false, keepPlaying: true, stack: false, defense: false, drawUntilPlayable: false };
+    expect(command(r, 'u2', { type: 'setRules', rules: on })).toBe(r);
+    const set = command(r, 'u1', { type: 'setRules', rules: on });
+    expect(set.rules).toEqual(on);
+    const started = command(set, 'u1', { type: 'start' });
+    expect(started.game!.rules).toEqual(on);
+    expect(command(started, 'u1', { type: 'setRules', rules: { ...on, multi: false } })).toBe(started);
+  });
+
+  it('parse: setRules harus punya semua aturan bertipe boolean; play boleh membawa more', () => {
+    expect(parseClientMessage({ type: 'setRules', rules: { multi: true } })).toBeNull();
+    expect(parseClientMessage({ type: 'play', index: 0, v: 1, more: [1, 2] })).toEqual({ type: 'play', index: 0, v: 1, more: [1, 2] });
+    expect(parseClientMessage({ type: 'play', index: 0, v: 1, more: 'x' })).toBeNull();
   });
 });

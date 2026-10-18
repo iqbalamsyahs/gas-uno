@@ -1,4 +1,4 @@
-import { apply, botAction, callUno, catchUno, COLORS, newGame, viewFor, type Action, type Color, type GameState, type PlayerView } from './uno';
+import { apply, botAction, callUno, catchUno, COLORS, DEFAULT_RULES, newGame, RULE_KEYS, viewFor, type Action, type Color, type GameState, type HouseRules, type PlayerView } from './uno';
 
 export type Seat = {
   id: string;
@@ -21,6 +21,7 @@ export type Room = {
   game: GameState | null;
   v: number;
   botSpeed: BotSpeed; // diatur host; dipakai server untuk jeda giliran bot
+  rules: HouseRules; // aturan rumah; diatur host, dipakai saat game dimulai
 };
 
 export type JoiningUser = { id: string; name: string; avatarUrl: string | null };
@@ -29,7 +30,7 @@ const TAKEOVER_MS = 60_000;
 export const QUEUE_MAX = 10;
 
 export function newRoom(): Room {
-  return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal' };
+  return { phase: 'lobby', seats: [], queue: [], hostId: null, game: null, v: 0, botSpeed: 'normal', rules: DEFAULT_RULES };
 }
 
 // now: belum dipakai (rejoin tidak butuh waktu saat ini), dipertahankan supaya tanda tangan konsisten dengan leave/expire
@@ -100,7 +101,8 @@ export type ClientMessage =
   | { type: 'removeBot' }
   | { type: 'start' }
   | { type: 'restart' }
-  | { type: 'play'; index: number; v: number; color?: Color }
+  | { type: 'play'; index: number; v: number; color?: Color; more?: number[] }
+  | { type: 'setRules'; rules: HouseRules }
   | { type: 'draw'; v: number }
   | { type: 'pass'; v: number }
   | { type: 'uno' }
@@ -130,7 +132,20 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     case 'play':
       if (typeof m.index !== 'number' || typeof m.v !== 'number') return null;
       if (m.color !== undefined && !isColor(m.color)) return null;
-      return m.color !== undefined ? { type: 'play', index: m.index, v: m.v, color: m.color } : { type: 'play', index: m.index, v: m.v };
+      if (m.more !== undefined && (!Array.isArray(m.more) || !m.more.every((x) => typeof x === 'number'))) return null;
+      return {
+        type: 'play',
+        index: m.index,
+        v: m.v,
+        ...(m.color !== undefined ? { color: m.color as Color } : {}),
+        ...(m.more !== undefined ? { more: m.more as number[] } : {}),
+      };
+    case 'setRules': {
+      if (typeof m.rules !== 'object' || m.rules === null) return null;
+      const raw = m.rules as Record<string, unknown>;
+      if (!RULE_KEYS.every((k) => typeof raw[k] === 'boolean')) return null;
+      return { type: 'setRules', rules: Object.fromEntries(RULE_KEYS.map((k) => [k, raw[k]])) as HouseRules };
+    }
     case 'draw':
     case 'pass':
       return typeof m.v === 'number' ? { type: m.type, v: m.v } : null;
@@ -144,7 +159,7 @@ function botNumber(id: string): number {
 }
 
 function gameAction(seat: number, msg: Extract<RoomCommand, { type: 'play' | 'draw' | 'pass' }>): Action {
-  if (msg.type === 'play') return { type: 'play', seat, index: msg.index, color: msg.color };
+  if (msg.type === 'play') return { type: 'play', seat, index: msg.index, color: msg.color, more: msg.more };
   if (msg.type === 'draw') return { type: 'draw', seat };
   return { type: 'pass', seat };
 }
@@ -175,7 +190,7 @@ export function command(room: Room, userId: string, msg: RoomCommand): Room {
       if (userId !== room.hostId || room.phase !== 'lobby') return room;
       const total = room.seats.length;
       if (total < 2 || total > 10) return room;
-      return { ...room, phase: 'playing', game: newGame(room.seats.map((s) => s.name)), v: room.v + 1 };
+      return { ...room, phase: 'playing', game: newGame(room.seats.map((s) => s.name), Date.now(), room.rules), v: room.v + 1 };
     }
     case 'restart': {
       if (userId !== room.hostId || room.phase !== 'ended') return room;
@@ -191,6 +206,11 @@ export function command(room: Room, userId: string, msg: RoomCommand): Room {
     case 'draw':
     case 'pass':
       return applyGameAction(room, room.seats.findIndex((s) => s.id === userId), msg);
+    case 'setRules': {
+      // aturan berlaku untuk game berikutnya; tidak bisa diubah saat game sedang berjalan
+      if (userId !== room.hostId || room.phase === 'playing') return room;
+      return { ...room, rules: msg.rules, v: room.v + 1 };
+    }
     case 'setBotSpeed': {
       if (userId !== room.hostId || room.phase !== 'lobby' || room.botSpeed === msg.speed) return room;
       return { ...room, botSpeed: msg.speed, v: room.v + 1 };
@@ -232,6 +252,7 @@ export type RoomMessage = {
   view: PlayerView | null;
   winner: number | null;
   botSpeed: BotSpeed;
+  rules: HouseRules;
 };
 
 export function snapshot(room: Room, userId: string): RoomMessage {
@@ -248,5 +269,6 @@ export function snapshot(room: Room, userId: string): RoomMessage {
     view: room.game ? viewFor(room.game, seatIdx) : null,
     winner: room.game?.winner ?? null,
     botSpeed: room.botSpeed,
+    rules: room.rules,
   };
 }

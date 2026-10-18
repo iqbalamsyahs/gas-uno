@@ -6,9 +6,16 @@ import { handLayout } from '@/lib/hand-layout';
 import type { Card as CardT } from '@/lib/uno';
 import s from './Hand.module.css';
 
-type Props = { cards: CardT[]; playable: boolean[]; myTurn: boolean; onPlay: (index: number) => void };
+type Props = {
+  cards: CardT[];
+  playable: boolean[];
+  myTurn: boolean;
+  onPlay: (index: number) => void;
+  picked?: number[]; // mode pilih banyak: kartu yang sudah dipilih
+  onToggle?: (index: number) => void;
+};
 
-export default function Hand({ cards, playable, myTurn, onPlay }: Props) {
+export default function Hand({ cards, playable, myTurn, onPlay, picked = [], onToggle }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 336, cardW: 52 });
   // pilihan terikat ke array tangan saat itu; kalau tangan berubah, pilihan otomatis hilang
@@ -27,6 +34,10 @@ export default function Hand({ cards, playable, myTurn, onPlay }: Props) {
   }, []);
 
   const click = (i: number) => {
+    if (onToggle) {
+      if (playable[i] || picked.includes(i)) onToggle(i);
+      return;
+    }
     if (!playable[i]) return;
     // perangkat dengan hover (mouse): satu klik langsung main. Layar sentuh: ketuk pilih, ketuk lagi main.
     if (selected === i || matchMedia('(hover: hover)').matches) {
@@ -53,7 +64,7 @@ export default function Hand({ cards, playable, myTurn, onPlay }: Props) {
                 card={card}
                 playable={playable[i]}
                 dim={myTurn && !playable[i]}
-                selected={selected === i}
+                selected={selected === i || picked.includes(i)}
                 onClick={() => click(i)}
                 style={j ? { marginLeft: step - size.cardW } : undefined}
               />

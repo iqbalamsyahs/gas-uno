@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import Card from './Card';
 import Hand from './Hand';
 import { ColorPicker, EndScreen } from './Overlays';
+import { RulesModal } from './RulesPanel';
 import { playCue } from './sound';
 import { cuesFor } from '@/lib/cue';
 import { seatLayout } from '@/lib/seat-layout';
-import { COLOR_NAME, SYMBOL, playableIndexes, type Card as CardT, type Color, type PlayerView } from '@/lib/uno';
+import { COLOR_NAME, SYMBOL, playableIndexes, type Card as CardT, type Color, type HouseRules, type PlayerView } from '@/lib/uno';
 import s from './Table.module.css';
 
 type SeatInfo = { avatarUrl: string | null; connected: boolean; botControlled: boolean };
@@ -18,12 +19,13 @@ type Props = {
   seatInfo?: SeatInfo[];
   isHost?: boolean;
   spectator?: boolean;
-  onPlay: (index: number, color?: Color) => void;
+  onPlay: (index: number, color?: Color, more?: number[]) => void;
   onDraw: () => void;
   onPass: () => void;
   onRestart: () => void;
   onUno: () => void;
   onCatch: (target: number) => void;
+  onSetRules?: (rules: HouseRules) => void; // hanya host di lobi atau layar akhir
 };
 
 function initialsOf(name: string): string {
@@ -72,7 +74,7 @@ function OpponentSeat({ name, count, active, info, pos }: { name: string; count:
   );
 }
 
-export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart, onUno, onCatch }: Props) {
+export default function Table({ view, avatarUrl, seatInfo, isHost = true, spectator = false, onPlay, onDraw, onPass, onRestart, onUno, onCatch, onSetRules }: Props) {
   const [wildPick, setWildPick] = useState<{ hand: CardT[]; index: number } | null>(null);
   const prevView = useRef<PlayerView | null>(null);
   useEffect(() => {
@@ -84,6 +86,29 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
   const myTurn = view.turn === view.seat && view.winner === null;
   const playable = playableIndexes(view);
   const play = (i: number) => (view.hand[i].c === 'wild' ? setWildPick({ hand: view.hand, index: i }) : onPlay(i));
+
+  // mode pilih banyak (aturan multi): kartu angka yang sama, kartu pertama harus bisa dimainkan
+  const isNumber = (k: CardT) => /^d$/.test(k.v);
+  const [group, setGroup] = useState<{ hand: CardT[]; indexes: number[] } | null>(null);
+  const [grouping, setGrouping] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const picked = group?.hand === view.hand ? group.indexes : [];
+  const canGroup = myTurn && view.rules.multi && !view.drawn && view.penalty === 0;
+  const groupMode = grouping && canGroup;
+  const groupPlayable = picked.length
+    ? view.hand.map((k, i) => picked.includes(i) || (isNumber(k) && k.v === view.hand[picked[0]].v))
+    : playable;
+  const toggle = (i: number) => {
+    if (picked.includes(i)) setGroup({ hand: view.hand, indexes: picked.filter((x) => x !== i) });
+    else if (groupPlayable[i]) setGroup({ hand: view.hand, indexes: [...picked, i] });
+  };
+  const playGroup = () => {
+    if (!picked.length) return;
+    setGroup(null);
+    setGrouping(false);
+    if (picked.length === 1) play(picked[0]);
+    else onPlay(picked[0], undefined, picked.slice(1));
+  };
 
   const info: SeatInfo[] =
     seatInfo ?? view.names.map((_, i) => ({ avatarUrl: i === view.seat ? avatarUrl : null, connected: true, botControlled: false }));
@@ -126,6 +151,7 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
         <p className={s.color}>
           {SYMBOL[view.color]} {COLOR_NAME[view.color]}
         </p>
+        {view.penalty > 0 && <p className={s.color}>Penalti +{view.penalty}</p>}
         <p className={s.log} aria-live="polite">{view.log}</p>
         {myTurn && view.drawn && (
           <button type="button" className={s.pass} onClick={onPass}>Lewati</button>
@@ -135,6 +161,14 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
         )}
         {!spectator && view.uno !== null && view.uno !== view.seat && (
           <button type="button" className={s.pass} onClick={() => onCatch(view.uno!)}>Tangkap UNO</button>
+        )}
+        {canGroup && (
+          <button type="button" className={s.pass} onClick={() => { setGrouping((g) => !g); setGroup(null); }}>
+            {grouping ? 'Batal pilih' : 'Pilih banyak'}
+          </button>
+        )}
+        {groupMode && picked.length > 0 && (
+          <button type="button" className={s.pass} onClick={playGroup}>Mainkan {picked.length}</button>
         )}
       </div>
 
@@ -149,7 +183,14 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
             {/* selalu dirender supaya screen reader membacakan saat isinya berubah */}
             <p className={s.yourTurn} aria-live="polite">{myTurn ? 'Giliran kamu' : ''}</p>
           </div>
-          <Hand cards={view.hand} playable={playable} myTurn={myTurn} onPlay={play} />
+          <Hand
+            cards={view.hand}
+            playable={groupMode ? groupPlayable : playable}
+            myTurn={myTurn}
+            onPlay={play}
+            picked={groupMode ? picked : []}
+            onToggle={groupMode ? toggle : undefined}
+          />
         </div>
       )}
 
@@ -162,13 +203,18 @@ export default function Table({ view, avatarUrl, seatInfo, isHost = true, specta
           onCancel={() => setWildPick(null)}
         />
       )}
-      {view.winner !== null && (
+      {view.winner !== null && !showRules && (
         <EndScreen
           name={view.names[view.winner]}
           avatarUrl={view.winner === view.seat ? avatarUrl : null}
+          loserName={view.loser !== null ? view.names[view.loser] : null}
           canRestart={isHost}
           onRestart={onRestart}
+          onRules={onSetRules && isHost ? () => setShowRules(true) : undefined}
         />
+      )}
+      {showRules && onSetRules && (
+        <RulesModal rules={view.rules} onChange={onSetRules} onClose={() => setShowRules(false)} />
       )}
     </main>
   );
